@@ -311,7 +311,7 @@ function cBar(s,i){
     <div class="o-actions">
       ${s.email?`<button class="btn-email" onclick="openEmail(${i})">✉️ إيميل</button>`:''}
       ${s.phone?`<button class="btn-wa" onclick="openWa(${i})">💬 واتساب</button>`:''}
-      <button class="btn-pdf" onclick="notif('PDF قريباً','error')">📄 PDF</button>
+      <button class="btn-pdf" onclick="genPDF(${i})">📄 PDF</button>
     </div>
   </div>`;
 }
@@ -467,6 +467,46 @@ function exportCSV(){
   notif('✅ تم تصدير CSV','success');
 }
 
+async function genPDF(i){
+  const s=sites[i];
+  if(!s.audit){notif('افحص الموقع أولاً','error');return;}
+  notif('⏳ جاري إنشاء التقرير...','success');
+  try{
+    const res=await fetch(API+'/api/pdf',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        domain:s.domain,page:s.page,score:s.audit.score,
+        mob:s.audit.mob,desk:s.audit.desk,ssl:s.audit.ssl,cwv:s.audit.cwv,
+        hasTitle:s.audit.hasTitle,hasDesc:s.audit.hasDesc,hasH1:s.audit.hasH1,
+        hasSitemap:s.audit.hasSitemap,hasRobots:s.audit.hasRobots,
+        bl:s.audit.bl,rd:s.audit.rd,dr:s.audit.dr,maps:s.audit.maps,
+        issues:s.audit.issues
+      })
+    });
+    if(!res.ok){notif('خطأ في إنشاء PDF','error');return;}
+    // Get WhatsApp message from header
+    const waHeader=res.headers.get('X-WA-Message');
+    if(waHeader&&s.phone){
+      const waMsg=atob(waHeader);
+      document.getElementById('waPhone').value=s.phone;
+      document.getElementById('waBody').value=waMsg;
+    }
+    // Download PDF
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`zeidy-seo-${s.domain}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    notif('✅ تم تحميل التقرير','success');
+    // If no email but has phone, open WhatsApp modal
+    if(!s.email&&s.phone&&waHeader){
+      setTimeout(()=>document.getElementById('waModal').classList.add('open'),1000);
+    }
+  }catch(e){notif('خطأ: '+e.message,'error');}
+}
 function cp(id){navigator.clipboard.writeText(document.getElementById(id).value);notif('✅ تم النسخ','success');}
 function cm(id){document.getElementById(id).classList.remove('open');}
 function sc(s){return s>=70?'s-good':s>=45?'s-med':'s-bad';}
