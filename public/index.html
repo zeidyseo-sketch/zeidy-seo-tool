@@ -122,7 +122,6 @@ textarea.msg{font-family:'Tajawal',sans-serif;background:var(--bg);border:1.5px 
     <div class="stat-pill">الشهر: <span id="hMonth">0</span></div>
   </div>
 </div>
-
 <div class="container">
   <div class="tracker">
     <div class="t-item"><div class="t-num"><span id="t1">0</span>/10</div><div class="t-label">تقارير اليوم</div></div>
@@ -133,7 +132,6 @@ textarea.msg{font-family:'Tajawal',sans-serif;background:var(--bg);border:1.5px 
     <div class="t-div"></div>
     <div class="t-item"><div class="t-num"><span id="t4">0</span></div><div class="t-label">مجموع الشهر</div></div>
   </div>
-
   <div class="panel">
     <div class="panel-title">اكتشاف العملاء المحتملين</div>
     <div class="search-grid">
@@ -157,7 +155,6 @@ textarea.msg{font-family:'Tajawal',sans-serif;background:var(--bg);border:1.5px 
       <div class="p-text" id="ptxt">جاري البحث...</div>
     </div>
   </div>
-
   <div id="resultsArea">
     <div class="empty"><div class="empty-icon">🎯</div><div class="empty-title">جاهز للبحث</div><div style="font-size:14px">أدخل المجال والدولة واضغط ابدأ البحث</div></div>
   </div>
@@ -195,38 +192,21 @@ textarea.msg{font-family:'Tajawal',sans-serif;background:var(--bg);border:1.5px 
 <div class="notif" id="notif"></div>
 
 <script>
-// API base — same origin on Render
-const API = '';
-
-let sites = [];
-const today = new Date().toDateString();
-if(localStorage.getItem('ldate') !== today){
-  ['tAudits','tEmails','tWa'].forEach(k => localStorage.setItem(k,'0'));
-  localStorage.setItem('ldate', today);
-}
+const API='';
+let sites=[];
+const today=new Date().toDateString();
+if(localStorage.getItem('ldate')!==today){['tAudits','tEmails','tWa'].forEach(k=>localStorage.setItem(k,'0'));localStorage.setItem('ldate',today);}
 function gs(k){return parseInt(localStorage.getItem(k)||'0');}
 function ss(k,v){localStorage.setItem(k,String(v));}
 function updateUI(){
   const a=gs('tAudits'),e=gs('tEmails'),w=gs('tWa'),m=gs('mTotal');
-  document.getElementById('t1').textContent=a;
-  document.getElementById('t2').textContent=e;
-  document.getElementById('t3').textContent=w;
-  document.getElementById('t4').textContent=m;
+  ['t1','t2','t3','t4'].forEach((id,i)=>document.getElementById(id).textContent=[a,e,w,m][i]);
   document.getElementById('hToday').textContent=a;
   document.getElementById('hMonth').textContent=m;
 }
 updateUI();
 
-const COUNTRIES={
-  '2682':{name:'السعودية',lang:'ar'},
-  '2784':{name:'الإمارات',lang:'ar'},
-  '2414':{name:'الكويت',lang:'ar'},
-  '2634':{name:'قطر',lang:'ar'},
-  '2048':{name:'البحرين',lang:'ar'},
-  '2512':{name:'عُمان',lang:'ar'},
-  '65':{name:'مصر',lang:'ar'},
-  '2036':{name:'الأردن',lang:'ar'}
-};
+const COUNTRIES={'2682':{name:'السعودية',lang:'ar'},'2784':{name:'الإمارات',lang:'ar'},'2414':{name:'الكويت',lang:'ar'},'2634':{name:'قطر',lang:'ar'},'2048':{name:'البحرين',lang:'ar'},'2512':{name:'عُمان',lang:'ar'},'65':{name:'مصر',lang:'ar'},'2036':{name:'الأردن',lang:'ar'}};
 
 async function startSearch(){
   const kw=document.getElementById('kw').value.trim();
@@ -241,11 +221,7 @@ async function startSearch(){
     const c=COUNTRIES[cid];
     for(let p=2;p<=3;p++){
       setProgress((p-1)*40,'جاري جلب الصفحة '+p+' من Google '+c.name+'...');
-      const res=await fetch(API+'/api/serp',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify([{keyword:kw,location_code:parseInt(cid),language_code:c.lang,device:'desktop',os:'windows',depth:10,offset:(p-1)*10}])
-      });
+      const res=await fetch(API+'/api/serp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify([{keyword:kw,location_code:parseInt(cid),language_code:c.lang,device:'desktop',os:'windows',depth:10,offset:(p-1)*10}])});
       const json=await res.json();
       if(json.tasks&&json.tasks[0]&&json.tasks[0].result){
         const items=json.tasks[0].result[0]?.items||[];
@@ -260,21 +236,17 @@ async function startSearch(){
     await sleep(300);
     hideProgress();
     renderResults();
-  }catch(err){
-    hideProgress();
-    notif('خطأ في الاتصال: '+err.message,'error');
-    console.error(err);
-  }
+  }catch(err){hideProgress();notif('خطأ: '+err.message,'error');}
   btn.disabled=false;btn.textContent='🔍 ابدأ البحث';
 }
 
 function renderResults(){
   const area=document.getElementById('resultsArea');
   if(!sites.length){area.innerHTML='<div class="empty"><div class="empty-icon">😕</div><div class="empty-title">لا توجد نتائج</div></div>';return;}
-  area.innerHTML=`<div class="results-head"><div class="r-count">تم اكتشاف <strong>${sites.length}</strong> موقع</div><button class="btn-export" onclick="exportCSV()">📥 CSV</button></div>`+sites.map((s,i)=>card(s,i)).join('');
+  area.innerHTML=`<div class="results-head"><div class="r-count">تم اكتشاف <strong>${sites.length}</strong> موقع</div><button class="btn-export" onclick="exportCSV()">📥 CSV</button></div>`+sites.map((s,i)=>cardHTML(s,i)).join('');
 }
 
-function card(s,i){
+function cardHTML(s,i){
   return `<div class="card" id="card-${i}">
   <div class="card-head" onclick="toggle(${i})">
     <div class="site-info">
@@ -283,7 +255,7 @@ function card(s,i){
     </div>
     <div class="badges">
       ${s.audit?`<div class="score-b ${sc(s.audit.score)}">${s.audit.score}%</div>`:''}
-      <button class="btn-audit" id="ab-${i}" onclick="event.stopPropagation();audit(${i})">${s.audit?'✅ تم':'🔍 فحص'}</button>
+      <button class="btn-audit" id="ab-${i}" onclick="event.stopPropagation();runAudit(${i})">${s.audit?'✅ تم':'🔍 فحص'}</button>
       <span class="arrow" id="ar-${i}">▼</span>
     </div>
   </div>
@@ -292,7 +264,7 @@ function card(s,i){
 }
 
 function emptyPanel(s){
-  return `<div style="padding:36px;text-align:center;color:var(--neutral)"><div style="font-size:32px;margin-bottom:12px">🔍</div><div style="font-size:14px;font-weight:600">اضغط فحص لتحليل ${s.domain}</div></div>${cBar(s,-1)}`;
+  return `<div style="padding:36px;text-align:center;color:var(--neutral)"><div style="font-size:32px;margin-bottom:12px">🔍</div><div style="font-size:14px;font-weight:600">اضغط فحص لتحليل ${s.domain}</div></div>`;
 }
 
 function auditHTML(s,i){
@@ -306,16 +278,16 @@ function auditHTML(s,i){
       <div class="m-row"><span class="m-label">Core Web Vitals</span><span class="m-val ${d.cwv==='جيد'?'ok':d.cwv==='يحتاج تحسين'?'warn':'err'}">${d.cwv}</span></div>
     </div>
     <div class="a-sec"><div class="a-title">📄 On-Page SEO</div>
-      <div class="m-row"><span class="m-label">Meta Title</span><span class="m-val ${d.title?'ok':'err'}">${d.title?'✓ موجود':'✗ مفقود'}</span></div>
-      <div class="m-row"><span class="m-label">Meta Description</span><span class="m-val ${d.desc?'ok':'err'}">${d.desc?'✓ موجود':'✗ مفقود'}</span></div>
-      <div class="m-row"><span class="m-label">H1 Tag</span><span class="m-val ${d.h1?'ok':'err'}">${d.h1?'✓ موجود':'✗ مفقود'}</span></div>
-      <div class="m-row"><span class="m-label">Sitemap</span><span class="m-val ${d.sitemap?'ok':'err'}">${d.sitemap?'✓ موجود':'✗ مفقود'}</span></div>
-      <div class="m-row"><span class="m-label">Robots.txt</span><span class="m-val ${d.robots?'ok':'err'}">${d.robots?'✓ موجود':'✗ مفقود'}</span></div>
+      <div class="m-row"><span class="m-label">Meta Title</span><span class="m-val ${d.hasTitle?'ok':'err'}">${d.hasTitle?'✓ موجود':'✗ مفقود'}</span></div>
+      <div class="m-row"><span class="m-label">Meta Description</span><span class="m-val ${d.hasDesc?'ok':'err'}">${d.hasDesc?'✓ موجود':'✗ مفقود'}</span></div>
+      <div class="m-row"><span class="m-label">H1 Tag</span><span class="m-val ${d.hasH1?'ok':'err'}">${d.hasH1?'✓ موجود':'✗ مفقود'}</span></div>
+      <div class="m-row"><span class="m-label">Sitemap</span><span class="m-val ${d.hasSitemap?'ok':'err'}">${d.hasSitemap?'✓ موجود':'✗ مفقود'}</span></div>
+      <div class="m-row"><span class="m-label">Robots.txt</span><span class="m-val ${d.hasRobots?'ok':'err'}">${d.hasRobots?'✓ موجود':'✗ مفقود'}</span></div>
     </div>
     <div class="a-sec"><div class="a-title">🔗 الباك لينكس</div>
-      <div class="m-row"><span class="m-label">إجمالي الباك لينكس</span><span class="m-val">${d.bl.toLocaleString()}</span></div>
-      <div class="m-row"><span class="m-label">Referring Domains</span><span class="m-val">${d.rd}</span></div>
-      <div class="m-row"><span class="m-label">Domain Rating</span><span class="m-val ${mc(d.dr,40,20)}">${d.dr}/100</span></div>
+      <div class="m-row"><span class="m-label">إجمالي الباك لينكس</span><span class="m-val">${(d.bl||0).toLocaleString()}</span></div>
+      <div class="m-row"><span class="m-label">Referring Domains</span><span class="m-val">${(d.rd||0).toLocaleString()}</span></div>
+      <div class="m-row"><span class="m-label">Domain Rank</span><span class="m-val ${mc(d.dr,40,20)}">${d.dr}/100</span></div>
       <div class="m-row"><span class="m-label">Google Maps</span><span class="m-val ${d.maps?'ok':'warn'}">${d.maps?'✓ مسجّل':'✗ غير مسجّل'}</span></div>
     </div>
   </div>
@@ -333,14 +305,14 @@ function cBar(s,i){
       ${s.phone?`<div class="chip">📱 ${s.phone}</div>`:''}
     </div>
     <div class="o-actions">
-      ${s.email&&i>=0?`<button class="btn-email" onclick="openEmail(${i})">✉️ إيميل</button>`:''}
-      ${s.phone&&i>=0?`<button class="btn-wa" onclick="openWa(${i})">💬 واتساب</button>`:''}
-      ${i>=0?`<button class="btn-pdf" onclick="notif('PDF قريباً','error')">📄 PDF</button>`:''}
+      ${s.email?`<button class="btn-email" onclick="openEmail(${i})">✉️ إيميل</button>`:''}
+      ${s.phone?`<button class="btn-wa" onclick="openWa(${i})">💬 واتساب</button>`:''}
+      <button class="btn-pdf" onclick="notif('PDF قريباً','error')">📄 PDF</button>
     </div>
   </div>`;
 }
 
-async function audit(i){
+async function runAudit(i){
   if(gs('tAudits')>=10){notif('وصلت لحد 10 تقارير اليوم ✋','error');return;}
   const s=sites[i];
   const btn=document.getElementById('ab-'+i);
@@ -349,41 +321,81 @@ async function audit(i){
   panel.classList.add('open');
   document.getElementById('ar-'+i).classList.add('open');
   panel.innerHTML=`<div style="padding:40px;text-align:center"><div class="skel" style="width:60%;margin:0 auto 12px"></div><div class="skel" style="width:40%;margin:0 auto 12px"></div><div class="skel" style="width:75%;margin:0 auto"></div><p style="margin-top:20px;color:var(--neutral);font-size:13px">جاري تحليل ${s.domain}...</p></div>`;
+
   try{
-    // PageSpeed via server proxy
-    const [mobRes, deskRes] = await Promise.all([
+    // 1. PageSpeed (free)
+    const [mobRes,deskRes]=await Promise.all([
       fetch(API+'/api/pagespeed?url='+encodeURIComponent(s.url)+'&strategy=mobile'),
       fetch(API+'/api/pagespeed?url='+encodeURIComponent(s.url)+'&strategy=desktop')
     ]);
-    const mobData = await mobRes.json();
-    const deskData = await deskRes.json();
-    const mob = Math.round((mobData?.lighthouseResult?.categories?.performance?.score||0.35)*100);
-    const desk = Math.round((deskData?.lighthouseResult?.categories?.performance?.score||0.5)*100);
+    const mobData=await mobRes.json();
+    const deskData=await deskRes.json();
+    const mob=Math.round((mobData?.lighthouseResult?.categories?.performance?.score||0.35)*100);
+    const desk=Math.round((deskData?.lighthouseResult?.categories?.performance?.score||0.5)*100);
+    const cwvData=mobData?.lighthouseResult?.categories?.performance?.score||0;
+    const cwv=cwvData>=0.9?'جيد':cwvData>=0.5?'يحتاج تحسين':'ضعيف';
 
-    // Backlinks via server proxy
-    let bl=50,rd=15,dr=10;
+    // 2. OnPage API - DataForSEO (real data)
+    let hasTitle=false,hasDesc=false,hasH1=false,hasSitemap=false,hasRobots=false,ssl=s.url.startsWith('https');
     try{
-      const blRes=await fetch(API+'/api/backlinks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify([{target:s.domain,limit:1}])});
-      const blData=await blRes.json();
-      if(blData.tasks&&blData.tasks[0]&&blData.tasks[0].result){
-        const r=blData.tasks[0].result[0];
-        bl=r?.total_count||50;
-        rd=r?.referring_domains||15;
-        dr=Math.min(Math.floor((rd/10)*5),100);
+      const opRes=await fetch(API+'/api/onpage',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify([{url:s.url,load_resources:false,enable_javascript:false,custom_js:'',calculate_keyword_density:false}])});
+      const opData=await opRes.json();
+      const page=opData?.tasks?.[0]?.result?.[0]?.items?.[0];
+      if(page){
+        hasTitle=!!(page.meta?.title);
+        hasDesc=!!(page.meta?.description);
+        hasH1=(page.headings?.h1?.length||0)>0;
+        ssl=page.checks?.is_https||ssl;
       }
+    }catch(e){console.log('OnPage fallback');}
+
+    // Check sitemap & robots
+    try{
+      const [smRes,rbRes]=await Promise.all([
+        fetch(API+'/api/pagespeed?url='+encodeURIComponent(new URL(s.url).origin+'/sitemap.xml')+'&strategy=mobile'),
+        fetch(API+'/api/pagespeed?url='+encodeURIComponent(new URL(s.url).origin+'/robots.txt')+'&strategy=mobile')
+      ]);
+      hasSitemap=smRes.ok;
+      hasRobots=rbRes.ok;
     }catch(e){}
 
-    const ssl=s.url.startsWith('https');
-    const score=Math.min(Math.floor((mob+desk)/2*0.6+(ssl?15:0)+(dr>20?10:5)),95);
-    const issues=buildIssues(mob,desk,ssl,s.page);
-    const ai=`<strong>${s.title}</strong> يظهر في الصفحة ${s.page} رغم وجوده في السوق — يخسر يومياً معظم عملائه المحتملين. أبرز المشاكل: ${issues.filter(x=>x.l==='red').slice(0,2).map(x=>x.t.split('—')[0].trim()).join('، ')}. مع تحسين SEO مركّز يمكنه الوصول للصفحة الأولى خلال 3-4 أشهر.`;
+    // 3. Backlinks API - DataForSEO (real data)
+    let bl=0,rd=0,dr=0,maps=false;
+    try{
+      const blRes=await fetch(API+'/api/backlinks',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify([{target:s.domain,limit:1}])});
+      const blData=await blRes.json();
+      const blResult=blData?.tasks?.[0]?.result?.[0];
+      if(blResult){
+        bl=blResult.total_count||0;
+        rd=blResult.referring_domains||0;
+        dr=Math.min(Math.round((rd/Math.max(bl,1))*100),100);
+        // Normalize DR to realistic range
+        dr=rd>500?Math.min(rd/10,100):rd>100?Math.min(rd/5,60):Math.min(rd/2,30);
+        dr=Math.round(dr);
+      }
+    }catch(e){console.log('Backlinks fallback');}
 
-    s.audit={score,mob,desk,ssl,title:Math.random()>.15,desc:Math.random()>.3,h1:Math.random()>.1,sitemap:Math.random()>.35,robots:Math.random()>.25,bl,rd,dr,maps:Math.random()>.45,cwv:['جيد','يحتاج تحسين','ضعيف'][Math.floor(Math.random()*3)],issues,ai};
+    // 4. Google Maps check
+    try{
+      const mapsRes=await fetch(API+'/api/maps',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify([{keyword:s.title,location_code:2682,language_code:'ar',depth:10}])});
+      const mapsData=await mapsRes.json();
+      const mapsItems=mapsData?.tasks?.[0]?.result?.[0]?.items||[];
+      maps=mapsItems.some(x=>x.domain&&s.domain&&x.domain.includes(s.domain.replace('www.','')));
+    }catch(e){}
+
+    const score=Math.min(Math.round((mob+desk)/2*0.5+(ssl?10:0)+(hasTitle?5:0)+(hasDesc?5:0)+(hasH1?5:0)+(rd>50?10:rd>10?5:0)),95);
+    const issues=buildIssues(mob,desk,ssl,hasTitle,hasDesc,hasH1,hasSitemap,hasRobots,s.page);
+    const ai=buildAI(s,mob,desk,ssl,issues);
+
+    s.audit={score,mob,desk,ssl,cwv,hasTitle,hasDesc,hasH1,hasSitemap,hasRobots,bl,rd,dr,maps,issues,ai};
 
     ss('tAudits',gs('tAudits')+1);
     ss('mTotal',gs('mTotal')+1);
     updateUI();
-    document.getElementById('card-'+i).outerHTML=card(s,i);
+    document.getElementById('card-'+i).outerHTML=cardHTML(s,i);
     document.getElementById('ab-body-'+i).classList.add('open');
     document.getElementById('ar-'+i).classList.add('open');
     notif('✅ تم فحص '+s.domain,'success');
@@ -394,35 +406,39 @@ async function audit(i){
   }
 }
 
-function buildIssues(mob,desk,ssl,page){
+function buildIssues(mob,desk,ssl,title,desc,h1,sitemap,robots,page){
   const issues=[];
   if(!ssl)issues.push({l:'red',t:'الموقع لا يستخدم HTTPS — يؤثر على الثقة والترتيب'});
   if(mob<50)issues.push({l:'red',t:`سرعة الموبايل ضعيفة جداً (${mob}/100) — معظم الزوار على موبايل`});
   else if(mob<70)issues.push({l:'orange',t:`سرعة الموبايل تحتاج تحسين (${mob}/100)`});
   if(desk<60)issues.push({l:'orange',t:`سرعة الديسكتوب منخفضة (${desk}/100)`});
-  issues.push({l:'red',t:`الموقع في الصفحة ${page} — يخسر 90% من الباحثين`});
-  if(Math.random()>.4)issues.push({l:'orange',t:'محتوى الصفحات يحتاج تحسين لكلمات مفتاحية مستهدفة'});
-  if(Math.random()>.5)issues.push({l:'green',t:'الموقع يمتلك باك لينكس — فرصة للتوسع'});
+  if(!desc)issues.push({l:'red',t:'Meta Description مفقود — يؤثر على نسبة النقر في Google'});
+  if(!h1)issues.push({l:'red',t:'H1 Tag مفقود — مشكلة أساسية في On-Page SEO'});
+  if(!sitemap)issues.push({l:'orange',t:'Sitemap غير موجود — Google لا يعرف كل صفحات الموقع'});
+  if(!robots)issues.push({l:'orange',t:'Robots.txt غير موجود'});
+  issues.push({l:'red',t:`الموقع في الصفحة ${page} — يخسر 90% من الباحثين عنه`});
   return issues.slice(0,5);
+}
+
+function buildAI(s,mob,desk,ssl,issues){
+  const problems=issues.filter(x=>x.l==='red').slice(0,2).map(x=>x.t.split('—')[0].trim());
+  return `<strong>${s.title}</strong> يظهر في الصفحة ${s.page} رغم وجوده في السوق — يخسر يومياً معظم عملائه المحتملين. أبرز المشاكل: ${problems.join('، ')}. مع تحسين SEO مركّز يمكنه الوصول للصفحة الأولى خلال 3-4 أشهر.`;
 }
 
 function toggle(i){document.getElementById('ab-body-'+i).classList.toggle('open');document.getElementById('ar-'+i).classList.toggle('open');}
 
 function openEmail(i){
-  const s=sites[i];
+  const s=sites[i];const d=s.audit;
   document.getElementById('eTo').value=s.email;
   document.getElementById('eSub').value=`تحليل SEO مجاني — ${s.domain}`;
-  document.getElementById('eBody').value=`السلام عليكم،\n\nأنا Taha من Zeidy SEO، متخصص في تحسين محركات البحث للمواقع العربية.\n\nقمت بمراجعة موقعكم ${s.domain} ووجدت:\n\n${s.audit&&s.audit.mob<70?`• سرعة الموبايل: ${s.audit.mob}/100 (تحتاج تحسيناً)\n`:''}• الموقع يظهر في الصفحة ${s.page} — معظم عملائكم لا يجدونكم\n\nعندي تقرير مفصل مجاني. هل أرسله لكم؟\n\nتحياتي،\nTaha Zeidy | Zeidy SEO\n📱 +216 98 239 317\n✉️ zeidyseo@gmail.com`;
+  document.getElementById('eBody').value=`السلام عليكم،\n\nأنا Taha من Zeidy SEO، متخصص في تحسين محركات البحث للمواقع العربية.\n\nقمت بمراجعة موقعكم ${s.domain} ووجدت:\n\n${d&&d.mob<70?`• سرعة الموبايل: ${d.mob}/100 (تحتاج تحسيناً عاجلاً)\n`:''}${d&&!d.hasDesc?'• Meta Description مفقود — يؤثر على ظهوركم في Google\n':''}• الموقع يظهر في الصفحة ${s.page} — معظم عملائكم لا يجدونكم\n\nعندي تقرير مفصل مجاني. هل أرسله لكم؟\n\nتحياتي،\nTaha Zeidy | Zeidy SEO\n📱 +216 98 239 317\n✉️ zeidyseo@gmail.com`;
   document.getElementById('emailModal').classList.add('open');
 }
 
 function sendEmail(){
-  const to=document.getElementById('eTo').value;
-  const sub=document.getElementById('eSub').value;
-  const body=document.getElementById('eBody').value;
+  const to=document.getElementById('eTo').value,sub=document.getElementById('eSub').value,body=document.getElementById('eBody').value;
   window.open(`mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`,'_blank');
-  ss('tEmails',gs('tEmails')+1);updateUI();
-  cm('emailModal');notif('✅ تم فتح تطبيق الإيميل','success');
+  ss('tEmails',gs('tEmails')+1);updateUI();cm('emailModal');notif('✅ تم فتح تطبيق الإيميل','success');
 }
 
 function openWa(i){
@@ -441,8 +457,8 @@ function openWA(){
 }
 
 function exportCSV(){
-  const rows=[['الترتيب','الصفحة','الدومين','العنوان','الإيميل','الهاتف','تقييم']];
-  sites.forEach(s=>rows.push([s.rank,s.page,s.domain,s.title,s.email,s.phone,s.audit?.score||'']));
+  const rows=[['الترتيب','الصفحة','الدومين','العنوان','الإيميل','الهاتف','تقييم','باك لينكس','Referring Domains']];
+  sites.forEach(s=>rows.push([s.rank,s.page,s.domain,s.title,s.email,s.phone,s.audit?.score||'',s.audit?.bl||'',s.audit?.rd||'']));
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob(['\ufeff'+rows.map(r=>r.join(',')).join('\n')],{type:'text/csv;charset=utf-8'}));
   a.download='zeidy-leads-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
