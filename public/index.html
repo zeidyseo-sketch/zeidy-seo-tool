@@ -371,7 +371,7 @@ async function runAudit(i){
         bl=blResult.backlinks||blResult.total_count||0;
         rd=blResult.referring_domains||0;
         const rank=blResult.rank||0;
-        dr=Math.round(rank);
+        dr=Math.min(Math.round(rank),100);
       }
     }catch(e){console.log('Backlinks fallback');}
 
