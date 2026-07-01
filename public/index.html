@@ -102,7 +102,20 @@ textarea.msg{font-family:'Tajawal',sans-serif;background:var(--bg);border:1.5px 
 .m-actions{display:flex;gap:10px;margin-top:16px;}
 .btn-send{background:var(--accent);color:var(--primary);border:none;border-radius:8px;padding:10px 20px;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;cursor:pointer;flex:1;}
 .btn-copy{background:var(--bg);color:var(--primary);border:1.5px solid var(--border);border-radius:8px;padding:10px 20px;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
-.skel{background:linear-gradient(90deg,#f0f4f8 25%,#e2e8f0 50%,#f0f4f8 75%);background-size:200% 100%;animation:sh 1.5s infinite;border-radius:6px;height:14px;margin-bottom:8px;}
+.crm-table{width:100%;border-collapse:collapse;font-size:13px;}
+.crm-table th{background:var(--primary);color:#fff;padding:8px 12px;text-align:right;font-weight:600;}
+.crm-table td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--primary);}
+.crm-table tr:hover td{background:var(--bg);}
+.crm-table tr.due td{background:#fff8e1;}
+.crm-table tr.due-today td{background:#fde8e8;}
+.status-badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;}
+.s-sent{background:#e8f5e9;color:#2e7d32;}
+.s-follow{background:#fff3cd;color:#856404;}
+.s-done{background:#e8eaf6;color:#3949ab;}
+.s-closed{background:#e8faf5;color:#1a8a6e;}
+.btn-sm{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:'Tajawal',sans-serif;}
+.alert-box{background:#fde8e8;border:1px solid #f5c6cb;border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#721c24;}
+.alert-box strong{color:#c0392b;}
 @keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .notif{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--primary);color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;z-index:2000;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3);}
 .notif.show{transform:translateX(-50%) translateY(0);}
@@ -155,6 +168,12 @@ textarea.msg{font-family:'Tajawal',sans-serif;background:var(--bg);border:1.5px 
       <div class="p-text" id="ptxt">جاري البحث...</div>
     </div>
   </div>
+  <!-- CRM Section -->
+  <div class="panel" id="crmPanel" style="display:none">
+    <div class="panel-title">📋 متابعة العملاء</div>
+    <div id="crmList"></div>
+  </div>
+
   <div id="resultsArea">
     <div class="empty"><div class="empty-icon">🎯</div><div class="empty-title">جاهز للبحث</div><div style="font-size:14px">أدخل المجال والدولة واضغط ابدأ البحث</div></div>
   </div>
@@ -257,7 +276,69 @@ function updateUI(){
 }
 updateUI();
 
-const COUNTRIES={'2682':{name:'السعودية',lang:'ar'},'2784':{name:'الإمارات',lang:'ar'},'2414':{name:'الكويت',lang:'ar'},'2634':{name:'قطر',lang:'ar'},'2048':{name:'البحرين',lang:'ar'},'2512':{name:'عُمان',lang:'ar'},'65':{name:'مصر',lang:'ar'},'2036':{name:'الأردن',lang:'ar'}};
+// ============ CRM ============
+function getCRM(){try{return JSON.parse(localStorage.getItem('crm')||'[]');}catch{return [];}}
+function saveCRM(data){localStorage.setItem('crm',JSON.stringify(data));}
+
+function addToCRM(site){
+  const crm=getCRM();
+  if(crm.find(x=>x.domain===site.domain)){notif('العميل موجود في CRM','error');return;}
+  const fd=new Date();fd.setDate(fd.getDate()+3);
+  crm.unshift({domain:site.domain,title:site.title,email:site.email||'',phone:site.phone||'',page:site.page,score:site.audit?.score||0,sentDate:new Date().toISOString(),followDate:fd.toISOString(),status:'sent'});
+  saveCRM(crm);renderCRM();
+  notif('✅ أُضيف للـ CRM — متابعة بعد 3 أيام','success');
+}
+
+function renderCRM(){
+  const crm=getCRM();
+  const panel=document.getElementById('crmPanel');
+  const list=document.getElementById('crmList');
+  if(!crm.length){panel.style.display='none';return;}
+  panel.style.display='block';
+  const now=new Date();
+  const due=crm.filter(x=>x.status==='sent'&&new Date(x.followDate)<=now);
+  let html='';
+  if(due.length)html+=`<div class="alert-box">⏰ <strong>عندك ${due.length} عميل يحتاج متابعة اليوم!</strong> ${due.map(x=>`• ${x.domain}`).join(' ')}</div>`;
+  html+=`<table class="crm-table"><tr><th>الموقع</th><th>الإرسال</th><th>المتابعة</th><th>الحالة</th><th>إجراء</th></tr>`;
+  const sMap={sent:'s-sent',follow:'s-follow',done:'s-done',closed:'s-closed'};
+  const sLabel={sent:'إيميل أُرسل',follow:'في المتابعة',done:'رد',closed:'✅ عميل'};
+  crm.forEach((c,i)=>{
+    const fd=new Date(c.followDate),sd=new Date(c.sentDate);
+    const isToday=c.status==='sent'&&fd<=now;
+    html+=`<tr class="${isToday?'due-today':''}">
+      <td><div style="font-weight:700">${c.domain}</div><div style="font-size:11px;color:var(--neutral)">${c.email||c.phone||''}</div></td>
+      <td>${sd.toLocaleDateString('ar')}</td>
+      <td style="${isToday?'color:#c0392b;font-weight:700':''}">${fd.toLocaleDateString('ar')}</td>
+      <td><span class="status-badge ${sMap[c.status]}">${sLabel[c.status]}</span></td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap">
+        ${c.phone?`<button class="btn-sm" style="background:#25D366;color:#fff" onclick="followWA(${i})">💬</button>`:''}
+        ${c.email?`<button class="btn-sm" style="background:var(--accent);color:var(--primary)" onclick="followEmail(${i})">✉️</button>`:''}
+        <button class="btn-sm" style="background:var(--secondary);color:#fff" onclick="setStatus(${i},'closed')">✅</button>
+        <button class="btn-sm" style="background:#fde8e8;color:#c0392b" onclick="delCRM(${i})">✕</button>
+      </td></tr>`;
+  });
+  html+='</table>';
+  list.innerHTML=html;
+}
+
+function followWA(i){
+  const c=getCRM()[i];
+  const msg=`السلام عليكم 👋\n\nأنا Taha من Zeidy SEO.\n\nأرسلت لكم قبل 3 أيام تقرير SEO مجاني عن موقعكم *${c.domain}*.\n\nهل وصلكم؟ 📧\n\nTaha Zeidy | +216 98 239 317`;
+  window.open(`https://wa.me/${c.phone.replace(/[^0-9+]/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+  setStatus(i,'follow');
+}
+
+function followEmail(i){
+  const c=getCRM()[i];
+  const sub=`Follow up — SEO Audit Report for ${c.domain}`;
+  const body=`Dear Team,\n\nI hope you received the SEO audit report I sent a few days ago for ${c.domain}.\n\nI wanted to follow up — would you be available for a quick call this week?\n\nBest regards,\nTaha Zeidy | Zeidy SEO\n📧 zeidyseo@gmail.com\n📱 +216 98 239 317`;
+  window.open(`mailto:${c.email}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`,'_blank');
+  setStatus(i,'follow');
+}
+
+function setStatus(i,s){const crm=getCRM();crm[i].status=s;saveCRM(crm);renderCRM();}
+function delCRM(i){const crm=getCRM();crm.splice(i,1);saveCRM(crm);renderCRM();}
+renderCRM();{'2682':{name:'السعودية',lang:'ar'},'2784':{name:'الإمارات',lang:'ar'},'2414':{name:'الكويت',lang:'ar'},'2634':{name:'قطر',lang:'ar'},'2048':{name:'البحرين',lang:'ar'},'2512':{name:'عُمان',lang:'ar'},'65':{name:'مصر',lang:'ar'},'2036':{name:'الأردن',lang:'ar'}};
 
 async function startSearch(){
   const kw=document.getElementById('kw').value.trim();
@@ -363,6 +444,7 @@ function cBar(s,i){
       ${s.email?`<button class="btn-email" onclick="openEmail(${i})">✉️ إيميل</button>`:''}
       ${s.phone?`<button class="btn-wa" onclick="openWa(${i})">💬 واتساب</button>`:''}
       <button class="btn-pdf" onclick="genPDF(${i})">📄 PDF</button>
+      <button class="btn-sm" style="background:var(--secondary);color:#fff;padding:7px 12px" onclick="addToCRM(sites[${i}])">📋 CRM</button>
     </div>
   </div>`;
 }
@@ -607,6 +689,9 @@ Taha Zeidy | Zeidy SEO
     }
 
     notif('✅ التقرير جاهز — إيميل وواتساب محضّرين','success');
+
+    // Auto add to CRM
+    addToCRM(s);
 
     // Show outreach modal
     setTimeout(()=>document.getElementById('outreachModal').classList.add('open'),800);
