@@ -189,6 +189,57 @@ textarea.msg{font-family:'Tajawal',sans-serif;background:var(--bg);border:1.5px 
   </div>
 </div>
 
+<!-- Outreach Modal -->
+<div class="modal-ov" id="outreachModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-head" style="background:var(--secondary)">
+      <div class="modal-title">📤 التواصل مع العميل</div>
+      <button class="modal-close" onclick="cm('outreachModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Step indicator -->
+      <div style="display:flex;gap:0;margin-bottom:20px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <div style="flex:1;padding:10px;text-align:center;background:var(--accent);color:var(--primary);font-weight:700;font-size:13px">
+          ✉️ الخطوة 1 — إيميل أول
+        </div>
+        <div style="flex:1;padding:10px;text-align:center;background:var(--bg);color:var(--neutral);font-weight:600;font-size:13px">
+          💬 الخطوة 2 — واتساب متابعة
+        </div>
+      </div>
+
+      <!-- Tab 1: Email -->
+      <div id="outTab1">
+        <span class="ml">إلى</span><input id="eTo" readonly/>
+        <span class="ml">الموضوع</span><input id="eSub"/>
+        <span class="ml">الرسالة (الإيميل الأول + PDF مرفق)</span>
+        <textarea class="msg" id="eBody" style="min-height:200px"></textarea>
+        <div style="background:var(--bg);border-radius:8px;padding:12px;margin-top:12px;font-size:12px;color:var(--neutral)">
+          💡 <strong>تذكير:</strong> ارفق ملف PDF اللي تحمّل مع هذا الإيميل
+        </div>
+        <div class="m-actions">
+          <button class="btn-send" onclick="sendEmail()">إرسال الإيميل ✈️</button>
+          <button class="btn-copy" onclick="cp('eBody')">نسخ</button>
+          <button class="btn-copy" onclick="switchTab()">التالي: واتساب ➜</button>
+        </div>
+      </div>
+
+      <!-- Tab 2: WhatsApp -->
+      <div id="outTab2" style="display:none">
+        <div style="background:#e8f5e9;border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:#2e7d32">
+          ⏰ <strong>أرسل هذه الرسالة بعد 3 أيام</strong> من الإيميل الأول
+        </div>
+        <span class="ml">رقم العميل</span><input id="waPhone" readonly/>
+        <span class="ml">رسالة المتابعة</span>
+        <textarea class="msg" id="waBody" style="min-height:160px"></textarea>
+        <div class="m-actions">
+          <button class="btn-send" style="background:#25D366" onclick="openWA()">فتح واتساب 📱</button>
+          <button class="btn-copy" onclick="cp('waBody')">نسخ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="notif" id="notif"></div>
 
 <script>
@@ -440,7 +491,11 @@ function openEmail(i){
 function sendEmail(){
   const to=document.getElementById('eTo').value,sub=document.getElementById('eSub').value,body=document.getElementById('eBody').value;
   window.open(`mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`,'_blank');
-  ss('tEmails',gs('tEmails')+1);updateUI();cm('emailModal');notif('✅ تم فتح تطبيق الإيميل','success');
+  ss('tEmails',gs('tEmails')+1);updateUI();
+  cm('emailModal');
+  notif('✅ تم فتح الإيميل — لا تنسى ترفق PDF','success');
+  // Switch to WhatsApp tab
+  setTimeout(()=>switchTab(),1500);
 }
 
 function openWa(i){
@@ -451,11 +506,16 @@ function openWa(i){
   ss('tWa',gs('tWa')+1);updateUI();
 }
 
+function switchTab(){
+  document.getElementById('outTab1').style.display='none';
+  document.getElementById('outTab2').style.display='block';
+}
 function openWA(){
   const ph=document.getElementById('waPhone').value.replace(/[^0-9+]/g,'');
   const msg=document.getElementById('waBody').value;
   window.open(`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`,'_blank');
   cm('waModal');
+  cm('outreachModal');
 }
 
 function exportCSV(){
@@ -485,26 +545,72 @@ async function genPDF(i){
       })
     });
     if(!res.ok){notif('خطأ في إنشاء PDF','error');return;}
-    // Get WhatsApp message from header
-    const waHeader=res.headers.get('X-WA-Message');
-    if(waHeader&&s.phone){
-      const waMsg=atob(waHeader);
-      document.getElementById('waPhone').value=s.phone;
-      document.getElementById('waBody').value=waMsg;
-    }
+
     // Download PDF
     const blob=await res.blob();
-    const url=URL.createObjectURL(blob);
+    const pdfUrl=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url;
+    a.href=pdfUrl;
     a.download=`zeidy-seo-${s.domain}.pdf`;
     a.click();
-    URL.revokeObjectURL(url);
-    notif('✅ تم تحميل التقرير','success');
-    // If no email but has phone, open WhatsApp modal
-    if(!s.email&&s.phone&&waHeader){
-      setTimeout(()=>document.getElementById('waModal').classList.add('open'),1000);
+    URL.revokeObjectURL(pdfUrl);
+
+    // Build Email (first contact)
+    const emailBody=`Dear ${s.domain} Team,
+
+I hope this message finds you well.
+
+My name is Taha Zeidy, an SEO specialist at Zeidy SEO. I recently reviewed your website and noticed several opportunities that could significantly improve your Google rankings.
+
+Here is a quick summary of what I found:
+
+• Your website currently appears on Page ${s.page} of Google search results
+• Mobile Speed: ${s.audit.mob}/100 ${s.audit.mob<70?'(needs urgent improvement)':''}
+${!s.audit.hasDesc?'• Meta Description is missing — this directly affects your click-through rate from Google\n':''}${!s.audit.hasH1?'• H1 Tag is missing — a critical on-page SEO element\n':''}• Domain has ${s.audit.bl.toLocaleString()} backlinks from ${s.audit.rd.toLocaleString()} referring domains
+
+I have prepared a detailed FREE SEO audit report for your website (attached). It includes all issues found and a clear action plan to help you reach Page 1 of Google within 3-4 months.
+
+I would love to discuss how we can help you grow your online visibility.
+
+Best regards,
+Taha Zeidy
+Zeidy SEO — Data Authority
+📧 zeidyseo@gmail.com
+📱 +216 98 239 317
+🔗 wa.me/message/LJYDD45XHP2BL1`;
+
+    // Build WhatsApp (follow-up after 3 days)
+    const waBody=`السلام عليكم 👋
+
+أنا Taha من Zeidy SEO.
+
+أرسلت لكم قبل 3 أيام تقرير SEO مجاني عن موقعكم *${s.domain}* على الإيميل.
+
+هل وصلكم؟ 📧
+
+التقرير يوضح لماذا موقعكم في الصفحة ${s.page} من Google وكيف نوصله للصفحة الأولى خلال 3-4 أشهر.
+
+Taha Zeidy | Zeidy SEO
++216 98 239 317`;
+
+    // Fill email modal
+    if(s.email){
+      document.getElementById('eTo').value=s.email;
+      document.getElementById('eSub').value=`Free SEO Audit Report — ${s.domain}`;
+      document.getElementById('eBody').value=emailBody;
     }
+
+    // Fill WhatsApp modal
+    if(s.phone){
+      document.getElementById('waPhone').value=s.phone;
+      document.getElementById('waBody').value=waBody;
+    }
+
+    notif('✅ التقرير جاهز — إيميل وواتساب محضّرين','success');
+
+    // Show outreach modal
+    setTimeout(()=>document.getElementById('outreachModal').classList.add('open'),800);
+
   }catch(e){notif('خطأ: '+e.message,'error');}
 }
 function cp(id){navigator.clipboard.writeText(document.getElementById(id).value);notif('✅ تم النسخ','success');}
