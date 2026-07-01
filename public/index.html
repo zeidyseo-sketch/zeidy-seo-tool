@@ -368,12 +368,10 @@ async function runAudit(i){
       const blData=await blRes.json();
       const blResult=blData?.tasks?.[0]?.result?.[0];
       if(blResult){
-        bl=blResult.total_count||0;
+        bl=blResult.backlinks||blResult.total_count||0;
         rd=blResult.referring_domains||0;
-        dr=Math.min(Math.round((rd/Math.max(bl,1))*100),100);
-        // Normalize DR to realistic range
-        dr=rd>500?Math.min(rd/10,100):rd>100?Math.min(rd/5,60):Math.min(rd/2,30);
-        dr=Math.round(dr);
+        const rank=blResult.rank||0;
+        dr=Math.round(rank);
       }
     }catch(e){console.log('Backlinks fallback');}
 
