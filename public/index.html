@@ -225,7 +225,11 @@ async function startSearch(){
       const json=await res.json();
       if(json.tasks&&json.tasks[0]&&json.tasks[0].result){
         const items=json.tasks[0].result[0]?.items||[];
-        items.filter(x=>x.type==='organic').forEach((item,i)=>{
+        const socialDomains=['instagram.com','facebook.com','twitter.com','x.com','tiktok.com','youtube.com','linkedin.com','pinterest.com','snapchat.com','reddit.com','telegram.org','wa.me','whatsapp.com'];
+        items.filter(x=>x.type==='organic').filter(x=>{
+          const d=(x.domain||'').toLowerCase();
+          return !socialDomains.some(s=>d.includes(s));
+        }).forEach((item,i)=>{
           sites.push({rank:(p-2)*10+i+11,page:p,url:item.url||'',domain:item.domain||'',title:item.title||item.domain||'',desc:item.description||'',email:extractEmail(item.description||''),phone:extractPhone(item.description||''),audit:null});
         });
       }
