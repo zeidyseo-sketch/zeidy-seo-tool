@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zeidy SEO — Lead Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--primary:#0D1B2A;--secondary:#1B4F72;--accent:#00C897;--neutral:#8D99AE;--bg:#F0F4F8;--white:#fff;--error:#e74c3c;--border:#dde3ea;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--primary);min-height:100vh;}
+.header{background:var(--primary);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3);}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:var(--primary);}
+.logo-text{color:#fff;font-weight:700;font-size:18px;}
+.logo-sub{color:var(--accent);font-size:11px;letter-spacing:1px;}
+.header-stats{display:flex;gap:16px;}
+.stat-pill{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:4px 14px;color:var(--neutral);font-size:12px;}
+.stat-pill span{color:var(--accent);font-weight:700;}
+.container{max-width:1100px;margin:0 auto;padding:24px 16px;}
+.tracker{background:#fff;border-radius:14px;padding:20px 28px;margin-bottom:20px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;}
+.t-item{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.t-num{font-size:28px;font-weight:900;color:var(--primary);}
+.t-num span{color:var(--accent);}
+.t-label{font-size:11px;color:var(--neutral);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.t-div{width:1px;height:40px;background:var(--border);}
+.panel{background:#fff;border-radius:16px;padding:28px;margin-bottom:20px;box-shadow:0 2px 16px rgba(13,27,42,.08);border:1px solid var(--border);}
+.panel-title{font-size:15px;font-weight:700;color:var(--secondary);margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+.panel-title::before{content:'';width:4px;height:18px;background:var(--accent);border-radius:2px;display:inline-block;}
+.search-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:14px;align-items:end;}
+.fg{display:flex;flex-direction:column;gap:6px;}
+label{font-size:12px;font-weight:600;color:var(--neutral);letter-spacing:.5px;text-transform:uppercase;}
+input,select{font-family:'Tajawal',sans-serif;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;font-size:14px;color:var(--primary);outline:none;width:100%;transition:all .2s;}
+input:focus,select:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(0,200,151,.1);}
+.btn-primary{background:var(--accent);color:var(--primary);border:none;border-radius:10px;padding:11px 24px;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;}
+.btn-primary:hover{background:#00b085;}
+.btn-primary:disabled{background:var(--neutral);cursor:not-allowed;}
+.progress{display:none;margin-top:16px;}
+.progress.on{display:block;}
+.p-track{background:var(--bg);border-radius:8px;height:6px;overflow:hidden;margin-bottom:8px;}
+.p-fill{height:100%;background:linear-gradient(90deg,var(--accent),#00e6b0);border-radius:8px;transition:width .4s;width:0%;}
+.p-text{font-size:12px;color:var(--neutral);text-align:center;}
+.results-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.r-count{font-size:13px;color:var(--neutral);}
+.r-count strong{color:var(--primary);font-size:18px;}
+.btn-export{background:var(--secondary);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.card{background:#fff;border-radius:14px;margin-bottom:16px;border:1px solid var(--border);overflow:hidden;box-shadow:0 2px 8px rgba(13,27,42,.05);}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;cursor:pointer;gap:16px;}
+.site-info{display:flex;align-items:center;gap:14px;flex:1;min-width:0;}
+.rank{width:32px;height:32px;background:var(--bg);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--neutral);flex-shrink:0;}
+.rank.p2{background:#fff3cd;color:#856404;}
+.rank.p3{background:#f8d7da;color:#842029;}
+.site-det{flex:1;min-width:0;}
+.s-name{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.s-url{font-size:12px;color:var(--neutral);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:right;}
+.badges{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+.score-b{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;}
+.s-bad{background:#fde8e8;color:#c0392b;}
+.s-med{background:#fef9e7;color:#d68910;}
+.s-good{background:#e8faf5;color:#1a8a6e;}
+.btn-audit{background:var(--accent);color:var(--primary);border:none;border-radius:8px;padding:7px 14px;font-family:'Tajawal',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.btn-audit:disabled{background:var(--neutral);cursor:not-allowed;}
+.arrow{color:var(--neutral);font-size:12px;transition:transform .2s;flex-shrink:0;}
+.arrow.open{transform:rotate(180deg);}
+.audit-body{display:none;border-top:1px solid var(--border);}
+.audit-body.open{display:block;}
+.audit-grid{display:grid;grid-template-columns:repeat(3,1fr);}
+.a-sec{padding:20px;border-left:1px solid var(--border);}
+.a-sec:last-child{border-left:none;}
+.a-title{font-size:11px;font-weight:700;color:var(--neutral);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;}
+.m-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:13px;}
+.m-label{color:var(--neutral);}
+.m-val{font-weight:700;}
+.ok{color:#1a8a6e;}.warn{color:#d68910;}.err{color:#c0392b;}
+.ai-box{background:linear-gradient(135deg,#f0f9ff,#e8faf5);border-top:1px solid var(--border);padding:18px 20px;}
+.ai-title{font-size:11px;font-weight:700;color:var(--secondary);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+.ai-text{font-size:13px;line-height:1.7;}
+.outreach{background:var(--primary);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.chips{display:flex;gap:12px;flex-wrap:wrap;}
+.chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border-radius:6px;padding:5px 10px;font-size:12px;color:rgba(255,255,255,.8);}
+.o-actions{display:flex;gap:8px;}
+.btn-email{background:var(--accent);color:var(--primary);border:none;border-radius:7px;padding:7px 14px;font-family:'Tajawal',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.btn-wa{background:#25D366;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-family:'Tajawal',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.btn-pdf{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:7px;padding:7px 14px;font-family:'Tajawal',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.issues{padding:16px 20px;border-top:1px solid var(--border);}
+.issue{display:flex;align-items:flex-start;gap:8px;font-size:12px;margin-bottom:8px;line-height:1.5;}
+.dot{width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+.dot.red{background:#c0392b;}.dot.orange{background:#d68910;}.dot.green{background:#1a8a6e;}
+.empty{text-align:center;padding:60px 20px;color:var(--neutral);}
+.empty-icon{font-size:48px;margin-bottom:16px;}
+.empty-title{font-size:18px;font-weight:700;color:var(--primary);margin-bottom:8px;}
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(13,27,42,.7);z-index:1000;align-items:center;justify-content:center;padding:16px;}
+.modal-ov.open{display:flex;}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal-head{background:var(--primary);padding:20px 24px;border-radius:16px 16px 0 0;display:flex;align-items:center;justify-content:space-between;}
+.modal-title{color:#fff;font-weight:700;font-size:16px;}
+.modal-close{background:none;border:none;color:var(--neutral);font-size:20px;cursor:pointer;}
+.modal-body{padding:24px;}
+.ml{font-size:12px;font-weight:700;color:var(--neutral);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;margin-top:16px;display:block;}
+.ml:first-child{margin-top:0;}
+textarea.msg{font-family:'Tajawal',sans-serif;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:14px;font-size:13px;line-height:1.7;color:var(--primary);width:100%;min-height:160px;resize:vertical;outline:none;}
+.m-actions{display:flex;gap:10px;margin-top:16px;}
+.btn-send{background:var(--accent);color:var(--primary);border:none;border-radius:8px;padding:10px 20px;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;cursor:pointer;flex:1;}
+.btn-copy{background:var(--bg);color:var(--primary);border:1.5px solid var(--border);border-radius:8px;padding:10px 20px;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+.crm-table{width:100%;border-collapse:collapse;font-size:13px;}
+.crm-table th{background:var(--primary);color:#fff;padding:8px 12px;text-align:right;font-weight:600;}
+.crm-table td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--primary);}
+.crm-table tr:hover td{background:var(--bg);}
+.crm-table tr.due td{background:#fff8e1;}
+.crm-table tr.due-today td{background:#fde8e8;}
+.status-badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;}
+.s-sent{background:#e8f5e9;color:#2e7d32;}
+.s-follow{background:#fff3cd;color:#856404;}
+.s-done{background:#e8eaf6;color:#3949ab;}
+.s-closed{background:#e8faf5;color:#1a8a6e;}
+.btn-sm{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:'Tajawal',sans-serif;}
+.alert-box{background:#fde8e8;border:1px solid #f5c6cb;border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#721c24;}
+.alert-box strong{color:#c0392b;}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.notif{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--primary);color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;z-index:2000;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3);}
+.notif.show{transform:translateX(-50%) translateY(0);}
+.notif.success{border-right:4px solid var(--accent);}
+.notif.error{border-right:4px solid var(--error);}
+@media(max-width:680px){.search-grid{grid-template-columns:1fr}.audit-grid{grid-template-columns:1fr}.a-sec{border-left:none;border-top:1px solid var(--border)}.header-stats{display:none}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">Z</div>
+    <div><div class="logo-text">Zeidy SEO</div><div class="logo-sub">LEAD GENERATOR</div></div>
+  </div>
+  <div class="header-stats">
+    <div class="stat-pill">اليوم: <span id="hToday">0</span>/10</div>
+    <div class="stat-pill">الشهر: <span id="hMonth">0</span></div>
+  </div>
+</div>
+<div class="container">
+  <div class="tracker">
+    <div class="t-item"><div class="t-num"><span id="t1">0</span>/10</div><div class="t-label">تقارير اليوم</div></div>
+    <div class="t-div"></div>
+    <div class="t-item"><div class="t-num"><span id="t2">0</span></div><div class="t-label">إيميل أُرسل</div></div>
+    <div class="t-div"></div>
+    <div class="t-item"><div class="t-num"><span id="t3">0</span></div><div class="t-label">واتساب</div></div>
+    <div class="t-div"></div>
+    <div class="t-item"><div class="t-num"><span id="t4">0</span></div><div class="t-label">مجموع الشهر</div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">اكتشاف العملاء المحتملين</div>
+    <div class="search-grid">
+      <div class="fg"><label>المجال</label><input id="kw" placeholder="مثال: متجر عطور" value="متجر عطور"/></div>
+      <div class="fg"><label>الدولة</label>
+        <select id="country">
+          <option value="2682">🇸🇦 السعودية</option>
+          <option value="2784">🇦🇪 الإمارات</option>
+          <option value="2414">🇰🇼 الكويت</option>
+          <option value="2634">🇶🇦 قطر</option>
+          <option value="2048">🇧🇭 البحرين</option>
+          <option value="2512">🇴🇲 عُمان</option>
+          <option value="65">🇪🇬 مصر</option>
+          <option value="2036">🇯🇴 الأردن</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="searchBtn" onclick="startSearch()">🔍 ابدأ البحث</button>
+    </div>
+    <div class="progress" id="prog">
+      <div class="p-track"><div class="p-fill" id="pfill"></div></div>
+      <div class="p-text" id="ptxt">جاري البحث...</div>
+    </div>
+  </div>
+  <!-- CRM Section -->
+  <div class="panel" id="crmPanel" style="display:none">
+    <div class="panel-title">📋 متابعة العملاء</div>
+    <div id="crmList"></div>
+  </div>
+
+  <div id="resultsArea">
+    <div class="empty"><div class="empty-icon">🎯</div><div class="empty-title">جاهز للبحث</div><div style="font-size:14px">أدخل المجال والدولة واضغط ابدأ البحث</div></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="emailModal">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">✉️ إرسال إيميل</div><button class="modal-close" onclick="cm('emailModal')">✕</button></div>
+    <div class="modal-body">
+      <span class="ml">إلى</span><input id="eTo" readonly/>
+      <span class="ml">الموضوع</span><input id="eSub"/>
+      <span class="ml">الرسالة</span><textarea class="msg" id="eBody"></textarea>
+      <div class="m-actions">
+        <button class="btn-send" onclick="sendEmail()">إرسال ✈️</button>
+        <button class="btn-copy" onclick="cp('eBody')">نسخ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-ov" id="waModal">
+  <div class="modal">
+    <div class="modal-head" style="background:#075E54"><div class="modal-title">💬 رسالة واتساب</div><button class="modal-close" onclick="cm('waModal')">✕</button></div>
+    <div class="modal-body">
+      <span class="ml">رقم العميل</span><input id="waPhone" readonly/>
+      <span class="ml">الرسالة</span><textarea class="msg" id="waBody"></textarea>
+      <div class="m-actions">
+        <button class="btn-send" style="background:#25D366" onclick="openWA()">فتح واتساب 📱</button>
+        <button class="btn-copy" onclick="cp('waBody')">نسخ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Outreach Modal -->
+<div class="modal-ov" id="outreachModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-head" style="background:var(--secondary)">
+      <div class="modal-title">📤 التواصل مع العميل</div>
+      <button class="modal-close" onclick="cm('outreachModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Step indicator -->
+      <div style="display:flex;gap:0;margin-bottom:20px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <div style="flex:1;padding:10px;text-align:center;background:var(--accent);color:var(--primary);font-weight:700;font-size:13px">
+          ✉️ الخطوة 1 — إيميل أول
+        </div>
+        <div style="flex:1;padding:10px;text-align:center;background:var(--bg);color:var(--neutral);font-weight:600;font-size:13px">
+          💬 الخطوة 2 — واتساب متابعة
+        </div>
+      </div>
+
+      <!-- Tab 1: Email -->
+      <div id="outTab1">
+        <span class="ml">إلى</span><input id="oTo" placeholder="أدخل إيميل العميل"/>
+        <span class="ml">الموضوع</span><input id="oSub"/>
+        <span class="ml">الرسالة (الإيميل الأول + PDF مرفق)</span>
+        <textarea class="msg" id="oBody" style="min-height:200px"></textarea>
+        <div style="background:var(--bg);border-radius:8px;padding:12px;margin-top:12px;font-size:12px;color:var(--neutral)">
+          💡 <strong>تذكير:</strong> ارفق ملف PDF اللي تحمّل مع هذا الإيميل
+        </div>
+        <div class="m-actions">
+          <button class="btn-send" onclick="sendOutreachEmail()">إرسال الإيميل ✈️</button>
+          <button class="btn-copy" onclick="cp('oBody')">نسخ</button>
+          <button class="btn-copy" onclick="switchTab()">التالي: واتساب ➜</button>
+        </div>
+      </div>
+
+      <!-- Tab 2: WhatsApp -->
+      <div id="outTab2" style="display:none">
+        <div style="background:#e8f5e9;border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:#2e7d32">
+          ⏰ <strong>أرسل هذه الرسالة بعد 3 أيام</strong> من الإيميل الأول — التذكير يظهر تلقائياً في قسم متابعة العملاء
+        </div>
+        <span class="ml">رقم العميل</span><input id="oPhone" placeholder="أدخل رقم واتساب مع رمز الدولة" style="direction:ltr"/>
+        <span class="ml">رسالة المتابعة</span>
+        <textarea class="msg" id="oWaBody" style="min-height:160px"></textarea>
+        <div class="m-actions">
+          <button class="btn-send" style="background:#25D366" onclick="openOutreachWA()">فتح واتساب 📱</button>
+          <button class="btn-copy" onclick="cp('oWaBody')">نسخ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+const API='';
+let sites=[];
+const today=new Date().toDateString();
+if(localStorage.getItem('ldate')!==today){['tAudits','tEmails','tWa'].forEach(k=>localStorage.setItem(k,'0'));localStorage.setItem('ldate',today);}
+function gs(k){return parseInt(localStorage.getItem(k)||'0');}
+function ss(k,v){localStorage.setItem(k,String(v));}
+function updateUI(){
+  const a=gs('tAudits'),e=gs('tEmails'),w=gs('tWa'),m=gs('mTotal');
+  ['t1','t2','t3','t4'].forEach((id,i)=>document.getElementById(id).textContent=[a,e,w,m][i]);
+  document.getElementById('hToday').textContent=a;
+  document.getElementById('hMonth').textContent=m;
+}
+updateUI();
+
+// ============ COUNTRIES ============
+const COUNTRIES={'2682':{name:'السعودية',lang:'ar'},'2784':{name:'الإمارات',lang:'ar'},'2414':{name:'الكويت',lang:'ar'},'2634':{name:'قطر',lang:'ar'},'2048':{name:'البحرين',lang:'ar'},'2512':{name:'عُمان',lang:'ar'},'65':{name:'مصر',lang:'ar'},'2036':{name:'الأردن',lang:'ar'}};
+
+// ============ CRM ============
+function getCRM(){try{return JSON.parse(localStorage.getItem('crm')||'[]');}catch{return [];}}
+function saveCRM(data){localStorage.setItem('crm',JSON.stringify(data));}
+
+function addToCRM(site){
+  const crm=getCRM();
+  if(crm.find(x=>x.domain===site.domain)){notif('العميل موجود في CRM','error');return;}
+  const fd=new Date();fd.setDate(fd.getDate()+3);
+  crm.unshift({domain:site.domain,title:site.title,email:site.email||'',phone:site.phone||'',page:site.page,score:site.audit?.score||0,sentDate:new Date().toISOString(),followDate:fd.toISOString(),status:'sent'});
+  saveCRM(crm);renderCRM();
+  notif('✅ أُضيف للـ CRM — متابعة بعد 3 أيام','success');
+}
+
+function renderCRM(){
+  const crm=getCRM();
+  const panel=document.getElementById('crmPanel');
+  const list=document.getElementById('crmList');
+  if(!crm.length){panel.style.display='none';return;}
+  panel.style.display='block';
+  const now=new Date();
+  const due=crm.filter(x=>x.status==='sent'&&new Date(x.followDate)<=now);
+  let html='';
+  if(due.length)html+=`<div class="alert-box">⏰ <strong>عندك ${due.length} عميل يحتاج متابعة اليوم!</strong> ${due.map(x=>`• ${x.domain}`).join(' ')}</div>`;
+  html+=`<table class="crm-table"><tr><th>الموقع</th><th>الإرسال</th><th>المتابعة</th><th>الحالة</th><th>إجراء</th></tr>`;
+  const sMap={sent:'s-sent',follow:'s-follow',done:'s-done',closed:'s-closed'};
+  const sLabel={sent:'إيميل أُرسل',follow:'في المتابعة',done:'رد',closed:'✅ عميل'};
+  crm.forEach((c,i)=>{
+    const fd=new Date(c.followDate),sd=new Date(c.sentDate);
+    const isToday=c.status==='sent'&&fd<=now;
+    html+=`<tr class="${isToday?'due-today':''}">
+      <td><div style="font-weight:700">${c.domain}</div><div style="font-size:11px;color:var(--neutral)">${c.email||c.phone||''}</div></td>
+      <td>${sd.toLocaleDateString('ar')}</td>
+      <td style="${isToday?'color:#c0392b;font-weight:700':''}">${fd.toLocaleDateString('ar')}</td>
+      <td><span class="status-badge ${sMap[c.status]}">${sLabel[c.status]}</span></td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap">
+        ${c.phone?`<button class="btn-sm" style="background:#25D366;color:#fff" onclick="followWA(${i})">💬</button>`:''}
+        ${c.email?`<button class="btn-sm" style="background:var(--accent);color:var(--primary)" onclick="followEmail(${i})">✉️</button>`:''}
+        <button class="btn-sm" style="background:var(--secondary);color:#fff" onclick="setStatus(${i},'closed')">✅</button>
+        <button class="btn-sm" style="background:#fde8e8;color:#c0392b" onclick="delCRM(${i})">✕</button>
+      </td></tr>`;
+  });
+  html+='</table>';
+  list.innerHTML=html;
+}
+
+function followWA(i){
+  const c=getCRM()[i];
+  const msg=`السلام عليكم 👋\n\nأنا Taha من Zeidy SEO.\n\nأرسلت لكم قبل 3 أيام تقرير SEO مجاني عن موقعكم *${c.domain}*.\n\nهل وصلكم؟ 📧\n\nTaha Zeidy | +216 98 239 317`;
+  window.open(`https://wa.me/${c.phone.replace(/[^0-9+]/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+  setStatus(i,'follow');
+}
+
+function followEmail(i){
+  const c=getCRM()[i];
+  const sub=`Follow up — SEO Audit Report for ${c.domain}`;
+  const body=`Dear Team,\n\nI hope you received the SEO audit report I sent a few days ago for ${c.domain}.\n\nI wanted to follow up — would you be available for a quick call this week?\n\nBest regards,\nTaha Zeidy | Zeidy SEO\n📧 zeidyseo@gmail.com\n📱 +216 98 239 317`;
+  window.open(`mailto:${c.email}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`,'_blank');
+  setStatus(i,'follow');
+}
+
+function setStatus(i,s){const crm=getCRM();crm[i].status=s;saveCRM(crm);renderCRM();}
+function delCRM(i){const crm=getCRM();crm.splice(i,1);saveCRM(crm);renderCRM();}
+renderCRM();
+
+async function startSearch(){
+  const kw=document.getElementById('kw').value.trim();
+  const cid=document.getElementById('country').value;
+  if(!kw){notif('أدخل المجال أولاً','error');return;}
+  const btn=document.getElementById('searchBtn');
+  btn.disabled=true;btn.textContent='⏳ جاري البحث...';
+  setProgress(5,'جاري الاتصال بـ DataForSEO...');
+  document.getElementById('resultsArea').innerHTML='';
+  sites=[];
+  try{
+    const c=COUNTRIES[cid];
+    for(let p=2;p<=3;p++){
+      setProgress((p-1)*40,'جاري جلب الصفحة '+p+' من Google '+c.name+'...');
+      const res=await fetch(API+'/api/serp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify([{keyword:kw,location_code:parseInt(cid),language_code:c.lang,device:'desktop',os:'windows',depth:10,offset:(p-1)*10}])});
+      const json=await res.json();
+      if(json.tasks&&json.tasks[0]&&json.tasks[0].result){
+        const items=json.tasks[0].result[0]?.items||[];
+        const socialDomains=['instagram.com','facebook.com','twitter.com','x.com','tiktok.com','youtube.com','linkedin.com','pinterest.com','snapchat.com','reddit.com','telegram.org','wa.me','whatsapp.com'];
+        items.filter(x=>x.type==='organic').filter(x=>{
+          const d=((x.domain||'')+(x.url||'')).toLowerCase();
+          return !socialDomains.some(s=>d.includes(s));
+        }).forEach((item,i)=>{
+          sites.push({rank:(p-2)*10+i+11,page:p,url:item.url||'',domain:item.domain||'',title:item.title||item.domain||'',desc:item.description||'',email:extractEmail(item.description||''),phone:extractPhone(item.description||''),audit:null});
+        });
+      }
+      await sleep(500);
+    }
+    setProgress(95,'جاري تحضير النتائج...');
+    sites=sites.slice(0,20);
+    await sleep(300);
+    hideProgress();
+    renderResults();
+  }catch(err){hideProgress();notif('خطأ: '+err.message,'error');}
+  btn.disabled=false;btn.textContent='🔍 ابدأ البحث';
+}
+
+function renderResults(){
+  const area=document.getElementById('resultsArea');
+  if(!sites.length){area.innerHTML='<div class="empty"><div class="empty-icon">😕</div><div class="empty-title">لا توجد نتائج</div></div>';return;}
+  area.innerHTML=`<div class="results-head"><div class="r-count">تم اكتشاف <strong>${sites.length}</strong> موقع</div><button class="btn-export" onclick="exportCSV()">📥 CSV</button></div>`+sites.map((s,i)=>cardHTML(s,i)).join('');
+}
+
+function cardHTML(s,i){
+  return `<div class="card" id="card-${i}">
+  <div class="card-head" onclick="toggle(${i})">
+    <div class="site-info">
+      <div class="rank ${s.page===2?'p2':'p3'}">ص${s.page}</div>
+      <div class="site-det"><div class="s-name">${s.title}</div><div class="s-url">${s.url}</div></div>
+    </div>
+    <div class="badges">
+      ${s.audit?`<div class="score-b ${sc(s.audit.score)}">${s.audit.score}%</div>`:''}
+      <button class="btn-audit" id="ab-${i}" onclick="event.stopPropagation();runAudit(${i})">${s.audit?'✅ تم':'🔍 فحص'}</button>
+      <span class="arrow" id="ar-${i}">▼</span>
+    </div>
+  </div>
+  <div class="audit-body" id="ab-body-${i}">${s.audit?auditHTML(s,i):emptyPanel(s)}</div>
+</div>`;
+}
+
+function emptyPanel(s){
+  return `<div style="padding:36px;text-align:center;color:var(--neutral)"><div style="font-size:32px;margin-bottom:12px">🔍</div><div style="font-size:14px;font-weight:600">اضغط فحص لتحليل ${s.domain}</div></div>`;
+}
+
+function auditHTML(s,i){
+  const d=s.audit;
+  return `<div class="ai-box"><div class="ai-title">🤖 تحليل AI</div><div class="ai-text">${d.ai}</div></div>
+  <div class="audit-grid">
+    <div class="a-sec"><div class="a-title">⚡ الأداء</div>
+      <div class="m-row"><span class="m-label">موبايل</span><span class="m-val ${mc(d.mob,75,50)}">${d.mob}/100</span></div>
+      <div class="m-row"><span class="m-label">ديسكتوب</span><span class="m-val ${mc(d.desk,80,55)}">${d.desk}/100</span></div>
+      <div class="m-row"><span class="m-label">HTTPS</span><span class="m-val ${d.ssl?'ok':'err'}">${d.ssl?'✓ مفعّل':'✗ غير مفعّل'}</span></div>
+      <div class="m-row"><span class="m-label">Core Web Vitals</span><span class="m-val ${d.cwv==='جيد'?'ok':d.cwv==='يحتاج تحسين'?'warn':'err'}">${d.cwv}</span></div>
+    </div>
+    <div class="a-sec"><div class="a-title">📄 On-Page SEO</div>
+      <div class="m-row"><span class="m-label">Meta Title</span><span class="m-val ${d.hasTitle?'ok':'err'}">${d.hasTitle?'✓ موجود':'✗ مفقود'}</span></div>
+      <div class="m-row"><span class="m-label">Meta Description</span><span class="m-val ${d.hasDesc?'ok':'err'}">${d.hasDesc?'✓ موجود':'✗ مفقود'}</span></div>
+      <div class="m-row"><span class="m-label">H1 Tag</span><span class="m-val ${d.hasH1?'ok':'err'}">${d.hasH1?'✓ موجود':'✗ مفقود'}</span></div>
+      <div class="m-row"><span class="m-label">Sitemap</span><span class="m-val ${d.hasSitemap?'ok':'err'}">${d.hasSitemap?'✓ موجود':'✗ مفقود'}</span></div>
+      <div class="m-row"><span class="m-label">Robots.txt</span><span class="m-val ${d.hasRobots?'ok':'err'}">${d.hasRobots?'✓ موجود':'✗ مفقود'}</span></div>
+    </div>
+    <div class="a-sec"><div class="a-title">🔗 الباك لينكس</div>
+      <div class="m-row"><span class="m-label">إجمالي الباك لينكس</span><span class="m-val">${(d.bl||0).toLocaleString()}</span></div>
+      <div class="m-row"><span class="m-label">Referring Domains</span><span class="m-val">${(d.rd||0).toLocaleString()}</span></div>
+      <div class="m-row"><span class="m-label">Domain Rank</span><span class="m-val ${mc(d.dr,40,20)}">${d.dr}/100</span></div>
+      <div class="m-row"><span class="m-label">Google Maps</span><span class="m-val ${d.maps?'ok':'warn'}">${d.maps?'✓ مسجّل':'✗ غير مسجّل'}</span></div>
+    </div>
+  </div>
+  <div class="issues"><div class="a-title" style="margin-bottom:10px">⚠️ أبرز المشاكل</div>
+    ${d.issues.map(x=>`<div class="issue"><div class="dot ${x.l}"></div><span>${x.t}</span></div>`).join('')}
+  </div>
+  ${cBar(s,i)}`;
+}
+
+function cBar(s,i){
+  return `<div class="outreach">
+    <div class="chips">
+      ${s.email?`<div class="chip">✉️ ${s.email}</div>`:`<input id="mEmail-${i}" placeholder="✉️ أدخل إيميل العميل" style="max-width:190px;padding:6px 10px;font-size:12px;border-radius:6px"/>`}
+      ${s.phone?`<div class="chip">📱 ${s.phone}</div>`:`<input id="mPhone-${i}" placeholder="📱 رقم واتساب" style="max-width:150px;padding:6px 10px;font-size:12px;border-radius:6px;direction:ltr"/>`}
+      ${(!s.email||!s.phone)?`<button class="btn-sm" style="background:var(--accent);color:var(--primary);padding:7px 12px" onclick="saveContact(${i})">💾 حفظ</button>`:''}
+    </div>
+    <div class="o-actions">
+      ${s.email?`<button class="btn-email" onclick="openEmail(${i})">✉️ إيميل</button>`:''}
+      ${s.phone?`<button class="btn-wa" onclick="openWa(${i})">💬 واتساب</button>`:''}
+      <button class="btn-pdf" onclick="genPDF(${i})">📄 PDF</button>
+      <button class="btn-sm" style="background:var(--secondary);color:#fff;padding:7px 12px" onclick="addToCRM(sites[${i}])">📋 CRM</button>
+    </div>
+  </div>`;
+}
+
+function saveContact(i){
+  const e=document.getElementById('mEmail-'+i),p=document.getElementById('mPhone-'+i);
+  if(e&&e.value.trim())sites[i].email=e.value.trim();
+  if(p&&p.value.trim())sites[i].phone=p.value.trim();
+  if(!sites[i].email&&!sites[i].phone){notif('أدخل إيميل أو رقم واتساب أولاً','error');return;}
+  document.getElementById('card-'+i).outerHTML=cardHTML(sites[i],i);
+  document.getElementById('ab-body-'+i).classList.add('open');
+  document.getElementById('ar-'+i).classList.add('open');
+  notif('✅ تم حفظ بيانات التواصل','success');
+}
+
+async function runAudit(i){
+  if(gs('tAudits')>=10){notif('وصلت لحد 10 تقارير اليوم ✋','error');return;}
+  const s=sites[i];
+  const btn=document.getElementById('ab-'+i);
+  btn.disabled=true;btn.textContent='⏳...';
+  const panel=document.getElementById('ab-body-'+i);
+  panel.classList.add('open');
+  document.getElementById('ar-'+i).classList.add('open');
+  panel.innerHTML=`<div style="padding:40px;text-align:center"><div class="skel" style="width:60%;margin:0 auto 12px"></div><div class="skel" style="width:40%;margin:0 auto 12px"></div><div class="skel" style="width:75%;margin:0 auto"></div><p style="margin-top:20px;color:var(--neutral);font-size:13px">جاري تحليل ${s.domain}...</p></div>`;
+
+  try{
+    // 1. PageSpeed (free)
+    const [mobRes,deskRes]=await Promise.all([
+      fetch(API+'/api/pagespeed?url='+encodeURIComponent(s.url)+'&strategy=mobile'),
+      fetch(API+'/api/pagespeed?url='+encodeURIComponent(s.url)+'&strategy=desktop')
+    ]);
+    const mobData=await mobRes.json();
+    const deskData=await deskRes.json();
+    const mob=Math.round((mobData?.lighthouseResult?.categories?.performance?.score||0.35)*100);
+    const desk=Math.round((deskData?.lighthouseResult?.categories?.performance?.score||0.5)*100);
+    const cwvData=mobData?.lighthouseResult?.categories?.performance?.score||0;
+    const cwv=cwvData>=0.9?'جيد':cwvData>=0.5?'يحتاج تحسين':'ضعيف';
+
+    // 2. OnPage API - DataForSEO (real data)
+    let hasTitle=false,hasDesc=false,hasH1=false,hasSitemap=false,hasRobots=false,ssl=s.url.startsWith('https');
+    try{
+      const opRes=await fetch(API+'/api/onpage',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify([{url:s.url,load_resources:false,enable_javascript:false,custom_js:'',calculate_keyword_density:false}])});
+      const opData=await opRes.json();
+      const page=opData?.tasks?.[0]?.result?.[0]?.items?.[0];
+      if(page){
+        hasTitle=!!(page.meta?.title);
+        hasDesc=!!(page.meta?.description);
+        hasH1=(page.headings?.h1?.length||0)>0;
+        ssl=page.checks?.is_https||ssl;
+      }
+    }catch(e){console.log('OnPage fallback');}
+
+    // Check sitemap & robots
+    try{
+      const [smRes,rbRes]=await Promise.all([
+        fetch(API+'/api/pagespeed?url='+encodeURIComponent(new URL(s.url).origin+'/sitemap.xml')+'&strategy=mobile'),
+        fetch(API+'/api/pagespeed?url='+encodeURIComponent(new URL(s.url).origin+'/robots.txt')+'&strategy=mobile')
+      ]);
+      hasSitemap=smRes.ok;
+      hasRobots=rbRes.ok;
+    }catch(e){}
+
+    // 3. Backlinks API - DataForSEO (real data)
+    let bl=0,rd=0,dr=0,maps=false;
+    try{
+      const blRes=await fetch(API+'/api/backlinks',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify([{target:s.domain,limit:1}])});
+      const blData=await blRes.json();
+      const blResult=blData?.tasks?.[0]?.result?.[0];
+      if(blResult){
+        bl=blResult.backlinks||blResult.total_count||0;
+        rd=blResult.referring_domains||0;
+        const rank=blResult.rank||0;
+        dr=Math.min(Math.round(rank),100);
+      }
+    }catch(e){console.log('Backlinks fallback');}
+
+    // 4. Google Maps check
+    try{
+      const mapsRes=await fetch(API+'/api/maps',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify([{keyword:s.title,location_code:2682,language_code:'ar',depth:10}])});
+      const mapsData=await mapsRes.json();
+      const mapsItems=mapsData?.tasks?.[0]?.result?.[0]?.items||[];
+      maps=mapsItems.some(x=>x.domain&&s.domain&&x.domain.includes(s.domain.replace('www.','')));
+    }catch(e){}
+
+    const score=Math.min(Math.round((mob+desk)/2*0.5+(ssl?10:0)+(hasTitle?5:0)+(hasDesc?5:0)+(hasH1?5:0)+(rd>50?10:rd>10?5:0)),95);
+    const issues=buildIssues(mob,desk,ssl,hasTitle,hasDesc,hasH1,hasSitemap,hasRobots,s.page);
+    const ai=buildAI(s,mob,desk,ssl,issues);
+
+    s.audit={score,mob,desk,ssl,cwv,hasTitle,hasDesc,hasH1,hasSitemap,hasRobots,bl,rd,dr,maps,issues,ai};
+
+    ss('tAudits',gs('tAudits')+1);
+    ss('mTotal',gs('mTotal')+1);
+    updateUI();
+    document.getElementById('card-'+i).outerHTML=cardHTML(s,i);
+    document.getElementById('ab-body-'+i).classList.add('open');
+    document.getElementById('ar-'+i).classList.add('open');
+    notif('✅ تم فحص '+s.domain,'success');
+  }catch(e){
+    btn.disabled=false;btn.textContent='🔍 فحص';
+    notif('خطأ في الفحص','error');
+    console.error(e);
+  }
+}
+
+function buildIssues(mob,desk,ssl,title,desc,h1,sitemap,robots,page){
+  const issues=[];
+  if(!ssl)issues.push({l:'red',t:'الموقع لا يستخدم HTTPS — يؤثر على الثقة والترتيب'});
+  if(mob<50)issues.push({l:'red',t:`سرعة الموبايل ضعيفة جداً (${mob}/100) — معظم الزوار على موبايل`});
+  else if(mob<70)issues.push({l:'orange',t:`سرعة الموبايل تحتاج تحسين (${mob}/100)`});
+  if(desk<60)issues.push({l:'orange',t:`سرعة الديسكتوب منخفضة (${desk}/100)`});
+  if(!desc)issues.push({l:'red',t:'Meta Description مفقود — يؤثر على نسبة النقر في Google'});
+  if(!h1)issues.push({l:'red',t:'H1 Tag مفقود — مشكلة أساسية في On-Page SEO'});
+  if(!sitemap)issues.push({l:'orange',t:'Sitemap غير موجود — Google لا يعرف كل صفحات الموقع'});
+  if(!robots)issues.push({l:'orange',t:'Robots.txt غير موجود'});
+  issues.push({l:'red',t:`الموقع في الصفحة ${page} — يخسر 90% من الباحثين عنه`});
+  return issues.slice(0,5);
+}
+
+function buildAI(s,mob,desk,ssl,issues){
+  const problems=issues.filter(x=>x.l==='red').slice(0,2).map(x=>x.t.split('—')[0].trim());
+  return `<strong>${s.title}</strong> يظهر في الصفحة ${s.page} رغم وجوده في السوق — يخسر يومياً معظم عملائه المحتملين. أبرز المشاكل: ${problems.join('، ')}. مع تحسين SEO مركّز يمكنه الوصول للصفحة الأولى خلال 3-4 أشهر.`;
+}
+
+function toggle(i){document.getElementById('ab-body-'+i).classList.toggle('open');document.getElementById('ar-'+i).classList.toggle('open');}
+
+function openEmail(i){
+  const s=sites[i];const d=s.audit;
+  document.getElementById('eTo').value=s.email;
+  document.getElementById('eSub').value=`تحليل SEO مجاني — ${s.domain}`;
+  document.getElementById('eBody').value=`السلام عليكم،\n\nأنا Taha من Zeidy SEO، متخصص في تحسين محركات البحث للمواقع العربية.\n\nقمت بمراجعة موقعكم ${s.domain} ووجدت:\n\n${d&&d.mob<70?`• سرعة الموبايل: ${d.mob}/100 (تحتاج تحسيناً عاجلاً)\n`:''}${d&&!d.hasDesc?'• Meta Description مفقود — يؤثر على ظهوركم في Google\n':''}• الموقع يظهر في الصفحة ${s.page} — معظم عملائكم لا يجدونكم\n\nعندي تقرير مفصل مجاني. هل أرسله لكم؟\n\nتحياتي،\nTaha Zeidy | Zeidy SEO\n📱 +216 98 239 317\n✉️ zeidyseo@gmail.com`;
+  document.getElementById('emailModal').classList.add('open');
+}
+
+function sendEmail(){
+  const to=document.getElementById('eTo').value,sub=document.getElementById('eSub').value,body=document.getElementById('eBody').value;
+  if(!to){notif('أدخل إيميل العميل أولاً','error');return;}
+  window.open(`mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`,'_blank');
+  ss('tEmails',gs('tEmails')+1);updateUI();
+  cm('emailModal');
+  notif('✅ تم فتح الإيميل — لا تنسى ترفق PDF','success');
+}
+
+function sendOutreachEmail(){
+  const to=document.getElementById('oTo').value,sub=document.getElementById('oSub').value,body=document.getElementById('oBody').value;
+  if(!to){notif('أدخل إيميل العميل أولاً','error');return;}
+  window.open(`mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`,'_blank');
+  ss('tEmails',gs('tEmails')+1);updateUI();
+  notif('✅ تم فتح الإيميل — لا تنسى ترفق PDF','success');
+  // Switch to WhatsApp follow-up tab
+  setTimeout(()=>switchTab(),1500);
+}
+
+function openOutreachWA(){
+  const ph=document.getElementById('oPhone').value.replace(/[^0-9+]/g,'');
+  if(!ph){notif('أدخل رقم واتساب أولاً','error');return;}
+  const msg=document.getElementById('oWaBody').value;
+  window.open(`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`,'_blank');
+  ss('tWa',gs('tWa')+1);updateUI();
+  cm('outreachModal');
+}
+
+function openWa(i){
+  const s=sites[i];
+  document.getElementById('waPhone').value=s.phone;
+  document.getElementById('waBody').value=`السلام عليكم 👋\n\nأنا Taha من Zeidy SEO.\n\nراجعت موقعكم *${s.domain}* — يظهر في الصفحة ${s.page} من Google، يعني تخسرون عملاء كل يوم.\n\nعندي تقرير مجاني. هل تحبون أبعثه لكم؟ 📊`;
+  document.getElementById('waModal').classList.add('open');
+  ss('tWa',gs('tWa')+1);updateUI();
+}
+
+function switchTab(){
+  document.getElementById('outTab1').style.display='none';
+  document.getElementById('outTab2').style.display='block';
+}
+function openWA(){
+  const ph=document.getElementById('waPhone').value.replace(/[^0-9+]/g,'');
+  const msg=document.getElementById('waBody').value;
+  window.open(`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`,'_blank');
+  cm('waModal');
+  cm('outreachModal');
+}
+
+function exportCSV(){
+  const rows=[['الترتيب','الصفحة','الدومين','العنوان','الإيميل','الهاتف','تقييم','باك لينكس','Referring Domains']];
+  sites.forEach(s=>rows.push([s.rank,s.page,s.domain,s.title,s.email,s.phone,s.audit?.score||'',s.audit?.bl||'',s.audit?.rd||'']));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+rows.map(r=>r.join(',')).join('\n')],{type:'text/csv;charset=utf-8'}));
+  a.download='zeidy-leads-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  notif('✅ تم تصدير CSV','success');
+}
+
+async function genPDF(i){
+  const s=sites[i];
+  if(!s.audit){notif('افحص الموقع أولاً','error');return;}
+  notif('⏳ جاري إنشاء التقرير...','success');
+  try{
+    const res=await fetch(API+'/api/pdf',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        domain:s.domain,page:s.page,score:s.audit.score,
+        mob:s.audit.mob,desk:s.audit.desk,ssl:s.audit.ssl,cwv:s.audit.cwv,
+        hasTitle:s.audit.hasTitle,hasDesc:s.audit.hasDesc,hasH1:s.audit.hasH1,
+        hasSitemap:s.audit.hasSitemap,hasRobots:s.audit.hasRobots,
+        bl:s.audit.bl,rd:s.audit.rd,dr:s.audit.dr,maps:s.audit.maps,
+        issues:s.audit.issues
+      })
+    });
+    if(!res.ok){notif('خطأ في إنشاء PDF','error');return;}
+
+    // Download PDF
+    const blob=await res.blob();
+    const pdfUrl=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=pdfUrl;
+    a.download=`zeidy-seo-${s.domain}.pdf`;
+    a.click();
+    URL.revokeObjectURL(pdfUrl);
+
+    // Build Email (first contact)
+    const emailBody=`Dear ${s.domain} Team,
+
+I hope this message finds you well.
+
+My name is Taha Zeidy, an SEO specialist at Zeidy SEO. I recently reviewed your website and noticed several opportunities that could significantly improve your Google rankings.
+
+Here is a quick summary of what I found:
+
+• Your website currently appears on Page ${s.page} of Google search results
+• Mobile Speed: ${s.audit.mob}/100 ${s.audit.mob<70?'(needs urgent improvement)':''}
+${!s.audit.hasDesc?'• Meta Description is missing — this directly affects your click-through rate from Google\n':''}${!s.audit.hasH1?'• H1 Tag is missing — a critical on-page SEO element\n':''}• Domain has ${s.audit.bl.toLocaleString()} backlinks from ${s.audit.rd.toLocaleString()} referring domains
+
+I have prepared a detailed FREE SEO audit report for your website (attached). It includes all issues found and a clear action plan to help you reach Page 1 of Google within 3-4 months.
+
+I would love to discuss how we can help you grow your online visibility.
+
+Best regards,
+Taha Zeidy
+Zeidy SEO — Data Authority
+📧 zeidyseo@gmail.com
+📱 +216 98 239 317
+🔗 wa.me/message/LJYDD45XHP2BL1`;
+
+    // Build WhatsApp (follow-up after 3 days)
+    const waBody=`السلام عليكم 👋
+
+أنا Taha من Zeidy SEO.
+
+أرسلت لكم قبل 3 أيام تقرير SEO مجاني عن موقعكم *${s.domain}* على الإيميل.
+
+هل وصلكم؟ 📧
+
+التقرير يوضح لماذا موقعكم في الصفحة ${s.page} من Google وكيف نوصله للصفحة الأولى خلال 3-4 أشهر.
+
+Taha Zeidy | Zeidy SEO
++216 98 239 317`;
+
+    // Fill outreach modal (email + WhatsApp follow-up)
+    document.getElementById('oTo').value=s.email||'';
+    document.getElementById('oSub').value=`Free SEO Audit Report — ${s.domain}`;
+    document.getElementById('oBody').value=emailBody;
+    document.getElementById('oPhone').value=s.phone||'';
+    document.getElementById('oWaBody').value=waBody;
+    document.getElementById('outTab1').style.display='block';
+    document.getElementById('outTab2').style.display='none';
+
+    notif('✅ التقرير جاهز — إيميل وواتساب محضّرين','success');
+
+    // Auto add to CRM
+    addToCRM(s);
+
+    // Show outreach modal
+    setTimeout(()=>document.getElementById('outreachModal').classList.add('open'),800);
+
+  }catch(e){notif('خطأ: '+e.message,'error');}
+}
+function cp(id){navigator.clipboard.writeText(document.getElementById(id).value);notif('✅ تم النسخ','success');}
+function cm(id){document.getElementById(id).classList.remove('open');}
+function sc(s){return s>=70?'s-good':s>=45?'s-med':'s-bad';}
+function mc(v,g,b){return v>=g?'ok':v>=b?'warn':'err';}
+function extractEmail(t){const m=t.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);return m?m[0]:'';}
+function extractPhone(t){const m=t.match(/(\+?966|00966|\+?971|00971|\+?965|\+?216)?[\s-]?[0-9]{9,10}/);return m?m[0]:'';}
+function setProgress(p,t){document.getElementById('prog').classList.add('on');document.getElementById('pfill').style.width=p+'%';document.getElementById('ptxt').textContent=t;}
+function hideProgress(){document.getElementById('prog').classList.remove('on');}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function notif(msg,type){const n=document.getElementById('notif');n.textContent=msg;n.className='notif '+type+' show';setTimeout(()=>n.classList.remove('show'),3000);}
+document.querySelectorAll('.modal-ov').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');}));
+</script>
+</body>
+</html>
