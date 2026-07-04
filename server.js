@@ -113,5 +113,16 @@ print(wa_msg)
   }
 });
 
+// ===== TEMPORARY DEBUG — remove after fixing credentials =====
+app.get('/api/debug', (req, res) => {
+  res.json({
+    login: DFS_LOGIN,
+    passLength: DFS_PASS ? DFS_PASS.length : 0,
+    passFirst3: DFS_PASS ? DFS_PASS.slice(0, 3) : null,
+    passLast3: DFS_PASS ? DFS_PASS.slice(-3) : null,
+    hasSpaces: DFS_PASS ? (DFS_PASS !== DFS_PASS.trim()) : null
+  });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Zeidy SEO Tool running on port ${PORT}`));
