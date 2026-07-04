@@ -228,16 +228,16 @@ textarea.msg{font-family:'Tajawal',sans-serif;background:var(--bg);border:1.5px 
 
       <!-- Tab 1: Email -->
       <div id="outTab1">
-        <span class="ml">إلى</span><input id="eTo" readonly/>
-        <span class="ml">الموضوع</span><input id="eSub"/>
+        <span class="ml">إلى</span><input id="oTo" placeholder="أدخل إيميل العميل"/>
+        <span class="ml">الموضوع</span><input id="oSub"/>
         <span class="ml">الرسالة (الإيميل الأول + PDF مرفق)</span>
-        <textarea class="msg" id="eBody" style="min-height:200px"></textarea>
+        <textarea class="msg" id="oBody" style="min-height:200px"></textarea>
         <div style="background:var(--bg);border-radius:8px;padding:12px;margin-top:12px;font-size:12px;color:var(--neutral)">
           💡 <strong>تذكير:</strong> ارفق ملف PDF اللي تحمّل مع هذا الإيميل
         </div>
         <div class="m-actions">
-          <button class="btn-send" onclick="sendEmail()">إرسال الإيميل ✈️</button>
-          <button class="btn-copy" onclick="cp('eBody')">نسخ</button>
+          <button class="btn-send" onclick="sendOutreachEmail()">إرسال الإيميل ✈️</button>
+          <button class="btn-copy" onclick="cp('oBody')">نسخ</button>
           <button class="btn-copy" onclick="switchTab()">التالي: واتساب ➜</button>
         </div>
       </div>
@@ -245,14 +245,14 @@ textarea.msg{font-family:'Tajawal',sans-serif;background:var(--bg);border:1.5px 
       <!-- Tab 2: WhatsApp -->
       <div id="outTab2" style="display:none">
         <div style="background:#e8f5e9;border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:#2e7d32">
-          ⏰ <strong>أرسل هذه الرسالة بعد 3 أيام</strong> من الإيميل الأول
+          ⏰ <strong>أرسل هذه الرسالة بعد 3 أيام</strong> من الإيميل الأول — التذكير يظهر تلقائياً في قسم متابعة العملاء
         </div>
-        <span class="ml">رقم العميل</span><input id="waPhone" readonly/>
+        <span class="ml">رقم العميل</span><input id="oPhone" placeholder="أدخل رقم واتساب مع رمز الدولة" style="direction:ltr"/>
         <span class="ml">رسالة المتابعة</span>
-        <textarea class="msg" id="waBody" style="min-height:160px"></textarea>
+        <textarea class="msg" id="oWaBody" style="min-height:160px"></textarea>
         <div class="m-actions">
-          <button class="btn-send" style="background:#25D366" onclick="openWA()">فتح واتساب 📱</button>
-          <button class="btn-copy" onclick="cp('waBody')">نسخ</button>
+          <button class="btn-send" style="background:#25D366" onclick="openOutreachWA()">فتح واتساب 📱</button>
+          <button class="btn-copy" onclick="cp('oWaBody')">نسخ</button>
         </div>
       </div>
     </div>
@@ -264,6 +264,9 @@ textarea.msg{font-family:'Tajawal',sans-serif;background:var(--bg);border:1.5px 
 <script>
 const API='';
 let sites=[];
+let currentCid='2682';
+let currentKw='';
+let kwVolume=0;
 const today=new Date().toDateString();
 if(localStorage.getItem('ldate')!==today){['tAudits','tEmails','tWa'].forEach(k=>localStorage.setItem(k,'0'));localStorage.setItem('ldate',today);}
 function gs(k){return parseInt(localStorage.getItem(k)||'0');}
@@ -352,7 +355,16 @@ async function startSearch(){
   setProgress(5,'جاري الاتصال بـ DataForSEO...');
   document.getElementById('resultsArea').innerHTML='';
   sites=[];
+  currentCid=cid;currentKw=kw;kwVolume=0;
   try{
+    // Fetch keyword search volume (once per search)
+    try{
+      const volRes=await fetch(API+'/api/volume',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify([{keywords:[kw],location_code:parseInt(cid),language_code:'ar'}])});
+      const volData=await volRes.json();
+      kwVolume=volData?.tasks?.[0]?.result?.[0]?.search_volume||0;
+    }catch(e){console.log('Volume fallback');}
+
     const c=COUNTRIES[cid];
     for(let p=2;p<=3;p++){
       setProgress((p-1)*40,'جاري جلب الصفحة '+p+' من Google '+c.name+'...');
@@ -433,15 +445,46 @@ function auditHTML(s,i){
   <div class="issues"><div class="a-title" style="margin-bottom:10px">⚠️ أبرز المشاكل</div>
     ${d.issues.map(x=>`<div class="issue"><div class="dot ${x.l}"></div><span>${x.t}</span></div>`).join('')}
   </div>
+  ${visHTML(d)}
   ${cBar(s,i)}`;
 }
 
+function visHTML(d){
+  const hasLabs=d.orgKw>0||d.orgTraffic>0||(d.competitors&&d.competitors.length);
+  if(!hasLabs&&!d.kwVolume)return'';
+  let html=`<div class="issues" style="background:linear-gradient(135deg,#fff8f0,#fff);border-top:1px solid var(--border)">
+    <div class="a-title" style="margin-bottom:12px">📊 الظهور والفرصة الضائعة</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px">`;
+  if(d.kwVolume)html+=`<div style="text-align:center;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="font-size:22px;font-weight:900;color:var(--secondary)">${d.kwVolume.toLocaleString()}</div>
+      <div style="font-size:11px;color:var(--neutral)">بحث شهري على الكلمة</div></div>`;
+  if(d.lostVisits)html+=`<div style="text-align:center;background:#fff;border:1px solid #f5c6cb;border-radius:10px;padding:12px">
+      <div style="font-size:22px;font-weight:900;color:#c0392b">~${d.lostVisits.toLocaleString()}</div>
+      <div style="font-size:11px;color:var(--neutral)">زيارة ضائعة/شهر (مقارنة بالمراكز الأولى)</div></div>`;
+  if(d.orgKw)html+=`<div style="text-align:center;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="font-size:22px;font-weight:900;color:var(--primary)">${d.orgKw.toLocaleString()}</div>
+      <div style="font-size:11px;color:var(--neutral)">كلمة يترتب عليها الموقع</div></div>`;
+  if(d.orgTraffic)html+=`<div style="text-align:center;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px">
+      <div style="font-size:22px;font-weight:900;color:var(--accent)">${d.orgTraffic.toLocaleString()}</div>
+      <div style="font-size:11px;color:var(--neutral)">زيارة عضوية مقدرة/شهر</div></div>`;
+  html+=`</div>`;
+  if(d.competitors&&d.competitors.length){
+    html+=`<div class="a-title" style="margin-bottom:8px">🥊 مقارنة مع المنافسين</div>
+    <table class="crm-table" style="font-size:12px"><tr><th>الدومين</th><th>عدد الكلمات</th><th>الزيارات المقدرة</th></tr>
+    <tr style="background:#e8faf5"><td style="font-weight:700">هذا الموقع</td><td>${(d.orgKw||0).toLocaleString()}</td><td>${(d.orgTraffic||0).toLocaleString()}</td></tr>
+    ${d.competitors.map(c=>`<tr><td style="direction:ltr;text-align:right">${c.domain}</td><td>${c.kw.toLocaleString()}</td><td>${c.traffic.toLocaleString()}</td></tr>`).join('')}
+    </table>`;
+  }
+  html+=`</div>`;
+  return html;
+}
+
 function cBar(s,i){
-  if(!s.email&&!s.phone)return'';
   return `<div class="outreach">
     <div class="chips">
-      ${s.email?`<div class="chip">✉️ ${s.email}</div>`:''}
-      ${s.phone?`<div class="chip">📱 ${s.phone}</div>`:''}
+      ${s.email?`<div class="chip">✉️ ${s.email}</div>`:`<input id="mEmail-${i}" placeholder="✉️ أدخل إيميل العميل" style="max-width:190px;padding:6px 10px;font-size:12px;border-radius:6px"/>`}
+      ${s.phone?`<div class="chip">📱 ${s.phone}</div>`:`<input id="mPhone-${i}" placeholder="📱 رقم واتساب" style="max-width:150px;padding:6px 10px;font-size:12px;border-radius:6px;direction:ltr"/>`}
+      ${(!s.email||!s.phone)?`<button class="btn-sm" style="background:var(--accent);color:var(--primary);padding:7px 12px" onclick="saveContact(${i})">💾 حفظ</button>`:''}
     </div>
     <div class="o-actions">
       ${s.email?`<button class="btn-email" onclick="openEmail(${i})">✉️ إيميل</button>`:''}
@@ -450,6 +493,17 @@ function cBar(s,i){
       <button class="btn-sm" style="background:var(--secondary);color:#fff;padding:7px 12px" onclick="addToCRM(sites[${i}])">📋 CRM</button>
     </div>
   </div>`;
+}
+
+function saveContact(i){
+  const e=document.getElementById('mEmail-'+i),p=document.getElementById('mPhone-'+i);
+  if(e&&e.value.trim())sites[i].email=e.value.trim();
+  if(p&&p.value.trim())sites[i].phone=p.value.trim();
+  if(!sites[i].email&&!sites[i].phone){notif('أدخل إيميل أو رقم واتساب أولاً','error');return;}
+  document.getElementById('card-'+i).outerHTML=cardHTML(sites[i],i);
+  document.getElementById('ab-body-'+i).classList.add('open');
+  document.getElementById('ar-'+i).classList.add('open');
+  notif('✅ تم حفظ بيانات التواصل','success');
 }
 
 async function runAudit(i){
@@ -524,11 +578,36 @@ async function runAudit(i){
       maps=mapsItems.some(x=>x.domain&&s.domain&&x.domain.includes(s.domain.replace('www.','')));
     }catch(e){}
 
+    // 5. Domain Overview + Competitors (DataForSEO Labs)
+    let orgKw=0,orgTraffic=0,etv=0,competitors=[];
+    try{
+      const [ovRes,cpRes]=await Promise.all([
+        fetch(API+'/api/domain-overview',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify([{target:s.domain.replace('www.',''),location_code:parseInt(currentCid),language_code:'ar'}])}),
+        fetch(API+'/api/competitors',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify([{target:s.domain.replace('www.',''),location_code:parseInt(currentCid),language_code:'ar',limit:3,exclude_top_domains:true}])})
+      ]);
+      const ovData=await ovRes.json();
+      const ovM=ovData?.tasks?.[0]?.result?.[0]?.items?.[0]?.metrics?.organic;
+      if(ovM){orgKw=ovM.count||0;orgTraffic=Math.round(ovM.etv||0);etv=Math.round(ovM.estimated_paid_traffic_cost||0);}
+      const cpData=await cpRes.json();
+      const cpItems=cpData?.tasks?.[0]?.result?.[0]?.items||[];
+      competitors=cpItems.filter(x=>x.domain&&x.domain!==s.domain.replace('www.','')).slice(0,3).map(x=>({
+        domain:x.domain,
+        kw:x.metrics?.organic?.count||0,
+        traffic:Math.round(x.metrics?.organic?.etv||0)
+      }));
+    }catch(e){console.log('Labs fallback');}
+
+    // Spam score from backlinks summary (already fetched above in blResult scope — refetch value)
+    // Estimated monthly opportunity loss: page 2-3 gets ~1% CTR vs ~25% in top-3
+    const lostVisits=kwVolume>0?Math.round(kwVolume*0.24):0;
+
     const score=Math.min(Math.round((mob+desk)/2*0.5+(ssl?10:0)+(hasTitle?5:0)+(hasDesc?5:0)+(hasH1?5:0)+(rd>50?10:rd>10?5:0)),95);
     const issues=buildIssues(mob,desk,ssl,hasTitle,hasDesc,hasH1,hasSitemap,hasRobots,s.page);
     const ai=buildAI(s,mob,desk,ssl,issues);
 
-    s.audit={score,mob,desk,ssl,cwv,hasTitle,hasDesc,hasH1,hasSitemap,hasRobots,bl,rd,dr,maps,issues,ai};
+    s.audit={score,mob,desk,ssl,cwv,hasTitle,hasDesc,hasH1,hasSitemap,hasRobots,bl,rd,dr,maps,issues,ai,orgKw,orgTraffic,etv,competitors,kwVolume,lostVisits};
 
     ss('tAudits',gs('tAudits')+1);
     ss('mTotal',gs('mTotal')+1);
@@ -560,7 +639,10 @@ function buildIssues(mob,desk,ssl,title,desc,h1,sitemap,robots,page){
 
 function buildAI(s,mob,desk,ssl,issues){
   const problems=issues.filter(x=>x.l==='red').slice(0,2).map(x=>x.t.split('—')[0].trim());
-  return `<strong>${s.title}</strong> يظهر في الصفحة ${s.page} رغم وجوده في السوق — يخسر يومياً معظم عملائه المحتملين. أبرز المشاكل: ${problems.join('، ')}. مع تحسين SEO مركّز يمكنه الوصول للصفحة الأولى خلال 3-4 أشهر.`;
+  const d=s.audit;
+  let loss='';
+  if(kwVolume>0)loss=` الكلمة المستهدفة عليها ${kwVolume.toLocaleString()} بحث شهرياً، وموقعه في الصفحة ${s.page} يعني أنه يفوّت ~${Math.round(kwVolume*0.24).toLocaleString()} زيارة كل شهر.`;
+  return `<strong>${s.title}</strong> يظهر في الصفحة ${s.page} رغم وجوده في السوق — يخسر يومياً معظم عملائه المحتملين.${loss} أبرز المشاكل: ${problems.join('، ')}. مع تحسين SEO مركّز يمكنه الوصول للصفحة الأولى خلال 3-4 أشهر.`;
 }
 
 function toggle(i){document.getElementById('ab-body-'+i).classList.toggle('open');document.getElementById('ar-'+i).classList.toggle('open');}
@@ -575,12 +657,30 @@ function openEmail(i){
 
 function sendEmail(){
   const to=document.getElementById('eTo').value,sub=document.getElementById('eSub').value,body=document.getElementById('eBody').value;
+  if(!to){notif('أدخل إيميل العميل أولاً','error');return;}
   window.open(`mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`,'_blank');
   ss('tEmails',gs('tEmails')+1);updateUI();
   cm('emailModal');
   notif('✅ تم فتح الإيميل — لا تنسى ترفق PDF','success');
-  // Switch to WhatsApp tab
+}
+
+function sendOutreachEmail(){
+  const to=document.getElementById('oTo').value,sub=document.getElementById('oSub').value,body=document.getElementById('oBody').value;
+  if(!to){notif('أدخل إيميل العميل أولاً','error');return;}
+  window.open(`mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`,'_blank');
+  ss('tEmails',gs('tEmails')+1);updateUI();
+  notif('✅ تم فتح الإيميل — لا تنسى ترفق PDF','success');
+  // Switch to WhatsApp follow-up tab
   setTimeout(()=>switchTab(),1500);
+}
+
+function openOutreachWA(){
+  const ph=document.getElementById('oPhone').value.replace(/[^0-9+]/g,'');
+  if(!ph){notif('أدخل رقم واتساب أولاً','error');return;}
+  const msg=document.getElementById('oWaBody').value;
+  window.open(`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`,'_blank');
+  ss('tWa',gs('tWa')+1);updateUI();
+  cm('outreachModal');
 }
 
 function openWa(i){
@@ -626,7 +726,10 @@ async function genPDF(i){
         hasTitle:s.audit.hasTitle,hasDesc:s.audit.hasDesc,hasH1:s.audit.hasH1,
         hasSitemap:s.audit.hasSitemap,hasRobots:s.audit.hasRobots,
         bl:s.audit.bl,rd:s.audit.rd,dr:s.audit.dr,maps:s.audit.maps,
-        issues:s.audit.issues
+        issues:s.audit.issues,
+        kwVolume:s.audit.kwVolume||0,lostVisits:s.audit.lostVisits||0,
+        orgKw:s.audit.orgKw||0,orgTraffic:s.audit.orgTraffic||0,
+        competitors:s.audit.competitors||[]
       })
     });
     if(!res.ok){notif('خطأ في إنشاء PDF','error');return;}
@@ -650,7 +753,7 @@ My name is Taha Zeidy, an SEO specialist at Zeidy SEO. I recently reviewed your 
 Here is a quick summary of what I found:
 
 • Your website currently appears on Page ${s.page} of Google search results
-• Mobile Speed: ${s.audit.mob}/100 ${s.audit.mob<70?'(needs urgent improvement)':''}
+${s.audit.kwVolume?`• Your target keyword gets ${s.audit.kwVolume.toLocaleString()} monthly searches — being on page ${s.page} means missing ~${s.audit.lostVisits.toLocaleString()} potential visits every month\n`:''}• Mobile Speed: ${s.audit.mob}/100 ${s.audit.mob<70?'(needs urgent improvement)':''}
 ${!s.audit.hasDesc?'• Meta Description is missing — this directly affects your click-through rate from Google\n':''}${!s.audit.hasH1?'• H1 Tag is missing — a critical on-page SEO element\n':''}• Domain has ${s.audit.bl.toLocaleString()} backlinks from ${s.audit.rd.toLocaleString()} referring domains
 
 I have prepared a detailed FREE SEO audit report for your website (attached). It includes all issues found and a clear action plan to help you reach Page 1 of Google within 3-4 months.
@@ -678,18 +781,14 @@ Zeidy SEO — Data Authority
 Taha Zeidy | Zeidy SEO
 +216 98 239 317`;
 
-    // Fill email modal
-    if(s.email){
-      document.getElementById('eTo').value=s.email;
-      document.getElementById('eSub').value=`Free SEO Audit Report — ${s.domain}`;
-      document.getElementById('eBody').value=emailBody;
-    }
-
-    // Fill WhatsApp modal
-    if(s.phone){
-      document.getElementById('waPhone').value=s.phone;
-      document.getElementById('waBody').value=waBody;
-    }
+    // Fill outreach modal (email + WhatsApp follow-up)
+    document.getElementById('oTo').value=s.email||'';
+    document.getElementById('oSub').value=`Free SEO Audit Report — ${s.domain}`;
+    document.getElementById('oBody').value=emailBody;
+    document.getElementById('oPhone').value=s.phone||'';
+    document.getElementById('oWaBody').value=waBody;
+    document.getElementById('outTab1').style.display='block';
+    document.getElementById('outTab2').style.display='none';
 
     notif('✅ التقرير جاهز — إيميل وواتساب محضّرين','success');
 
