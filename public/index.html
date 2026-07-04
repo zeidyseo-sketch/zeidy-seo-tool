@@ -276,6 +276,9 @@ function updateUI(){
 }
 updateUI();
 
+// ============ COUNTRIES ============
+const COUNTRIES={'2682':{name:'السعودية',lang:'ar'},'2784':{name:'الإمارات',lang:'ar'},'2414':{name:'الكويت',lang:'ar'},'2634':{name:'قطر',lang:'ar'},'2048':{name:'البحرين',lang:'ar'},'2512':{name:'عُمان',lang:'ar'},'65':{name:'مصر',lang:'ar'},'2036':{name:'الأردن',lang:'ar'}};
+
 // ============ CRM ============
 function getCRM(){try{return JSON.parse(localStorage.getItem('crm')||'[]');}catch{return [];}}
 function saveCRM(data){localStorage.setItem('crm',JSON.stringify(data));}
@@ -338,7 +341,7 @@ function followEmail(i){
 
 function setStatus(i,s){const crm=getCRM();crm[i].status=s;saveCRM(crm);renderCRM();}
 function delCRM(i){const crm=getCRM();crm.splice(i,1);saveCRM(crm);renderCRM();}
-renderCRM();{'2682':{name:'السعودية',lang:'ar'},'2784':{name:'الإمارات',lang:'ar'},'2414':{name:'الكويت',lang:'ar'},'2634':{name:'قطر',lang:'ar'},'2048':{name:'البحرين',lang:'ar'},'2512':{name:'عُمان',lang:'ar'},'65':{name:'مصر',lang:'ar'},'2036':{name:'الأردن',lang:'ar'}};
+renderCRM();
 
 async function startSearch(){
   const kw=document.getElementById('kw').value.trim();
