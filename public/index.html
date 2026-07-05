@@ -431,7 +431,6 @@ function auditHTML(s,i){
     <div class="a-sec"><div class="a-title">📄 On-Page SEO</div>
       <div class="m-row"><span class="m-label">Meta Title</span><span class="m-val ${d.hasTitle?'ok':'err'}">${d.hasTitle?'✓ موجود':'✗ مفقود'}</span></div>
       <div class="m-row"><span class="m-label">Meta Description</span><span class="m-val ${d.hasDesc?'ok':'err'}">${d.hasDesc?'✓ موجود':'✗ مفقود'}</span></div>
-      <div class="m-row"><span class="m-label">H1 Tag</span><span class="m-val ${d.hasH1?'ok':'err'}">${d.hasH1?'✓ موجود':'✗ مفقود'}</span></div>
       <div class="m-row"><span class="m-label">Sitemap</span><span class="m-val ${d.hasSitemap?'ok':'err'}">${d.hasSitemap?'✓ موجود':'✗ مفقود'}</span></div>
       <div class="m-row"><span class="m-label">Robots.txt</span><span class="m-val ${d.hasRobots?'ok':'err'}">${d.hasRobots?'✓ موجود':'✗ مفقود'}</span></div>
     </div>
@@ -529,20 +528,20 @@ async function runAudit(i){
     const cwvData=mobData?.lighthouseResult?.categories?.performance?.score||0;
     const cwv=cwvData>=0.9?'جيد':cwvData>=0.5?'يحتاج تحسين':'ضعيف';
 
-    // 2. OnPage API - DataForSEO (real data)
-    let hasTitle=false,hasDesc=false,hasH1=false,hasSitemap=false,hasRobots=false,ssl=s.url.startsWith('https');
+    // 2. OnPage API - DataForSEO (real data: title, description, https)
+    let hasTitle=false,hasDesc=false,hasSitemap=false,hasRobots=false,ssl=s.url.startsWith('https');
     try{
       const opRes=await fetch(API+'/api/onpage',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify([{url:s.url,load_resources:false,enable_javascript:false,custom_js:'',calculate_keyword_density:false}])});
+        body:JSON.stringify([{url:s.url,load_resources:false,enable_javascript:false,calculate_keyword_density:false}])});
       const opData=await opRes.json();
       const page=opData?.tasks?.[0]?.result?.[0]?.items?.[0];
-      if(page){
-        hasTitle=!!(page.meta?.title);
-        hasDesc=!!(page.meta?.description);
-        hasH1=(page.headings?.h1?.length||0)>0;
-        ssl=page.checks?.is_https||ssl;
+      const meta=page?.meta;
+      if(meta){
+        hasTitle=!!(meta.title&&meta.title.trim());
+        hasDesc=!!(meta.description&&meta.description.trim());
       }
-    }catch(e){console.log('OnPage fallback');}
+      if(page?.checks&&typeof page.checks.is_https==='boolean')ssl=page.checks.is_https;
+    }catch(e){console.log('OnPage fallback',e);}
 
     // Check sitemap & robots
     try{
@@ -603,11 +602,11 @@ async function runAudit(i){
     // Estimated monthly opportunity loss: page 2-3 gets ~1% CTR vs ~25% in top-3
     const lostVisits=kwVolume>0?Math.round(kwVolume*0.24):0;
 
-    const score=Math.min(Math.round((mob+desk)/2*0.5+(ssl?10:0)+(hasTitle?5:0)+(hasDesc?5:0)+(hasH1?5:0)+(rd>50?10:rd>10?5:0)),95);
-    const issues=buildIssues(mob,desk,ssl,hasTitle,hasDesc,hasH1,hasSitemap,hasRobots,s.page);
+    const score=Math.min(Math.round((mob+desk)/2*0.5+(ssl?10:0)+(hasTitle?7:0)+(hasDesc?8:0)+(rd>50?10:rd>10?5:0)),95);
+    const issues=buildIssues(mob,desk,ssl,hasTitle,hasDesc,hasSitemap,hasRobots,s.page);
     const ai=buildAI(s,mob,desk,ssl,issues);
 
-    s.audit={score,mob,desk,ssl,cwv,hasTitle,hasDesc,hasH1,hasSitemap,hasRobots,bl,rd,dr,maps,issues,ai,orgKw,orgTraffic,etv,competitors,kwVolume,lostVisits};
+    s.audit={score,mob,desk,ssl,cwv,hasTitle,hasDesc,hasSitemap,hasRobots,bl,rd,dr,maps,issues,ai,orgKw,orgTraffic,etv,competitors,kwVolume,lostVisits};
 
     ss('tAudits',gs('tAudits')+1);
     ss('mTotal',gs('mTotal')+1);
@@ -623,14 +622,14 @@ async function runAudit(i){
   }
 }
 
-function buildIssues(mob,desk,ssl,title,desc,h1,sitemap,robots,page){
+function buildIssues(mob,desk,ssl,title,desc,sitemap,robots,page){
   const issues=[];
   if(!ssl)issues.push({l:'red',t:'الموقع لا يستخدم HTTPS — يؤثر على الثقة والترتيب'});
   if(mob<50)issues.push({l:'red',t:`سرعة الموبايل ضعيفة جداً (${mob}/100) — معظم الزوار على موبايل`});
   else if(mob<70)issues.push({l:'orange',t:`سرعة الموبايل تحتاج تحسين (${mob}/100)`});
   if(desk<60)issues.push({l:'orange',t:`سرعة الديسكتوب منخفضة (${desk}/100)`});
+  if(!title)issues.push({l:'red',t:'Meta Title مفقود — عنصر أساسي في On-Page SEO'});
   if(!desc)issues.push({l:'red',t:'Meta Description مفقود — يؤثر على نسبة النقر في Google'});
-  if(!h1)issues.push({l:'red',t:'H1 Tag مفقود — مشكلة أساسية في On-Page SEO'});
   if(!sitemap)issues.push({l:'orange',t:'Sitemap غير موجود — Google لا يعرف كل صفحات الموقع'});
   if(!robots)issues.push({l:'orange',t:'Robots.txt غير موجود'});
   issues.push({l:'red',t:`الموقع في الصفحة ${page} — يخسر 90% من الباحثين عنه`});
@@ -723,7 +722,7 @@ async function genPDF(i){
       body:JSON.stringify({
         domain:s.domain,page:s.page,score:s.audit.score,
         mob:s.audit.mob,desk:s.audit.desk,ssl:s.audit.ssl,cwv:s.audit.cwv,
-        hasTitle:s.audit.hasTitle,hasDesc:s.audit.hasDesc,hasH1:s.audit.hasH1,
+        hasTitle:s.audit.hasTitle,hasDesc:s.audit.hasDesc,
         hasSitemap:s.audit.hasSitemap,hasRobots:s.audit.hasRobots,
         bl:s.audit.bl,rd:s.audit.rd,dr:s.audit.dr,maps:s.audit.maps,
         issues:s.audit.issues,
@@ -754,7 +753,7 @@ Here is a quick summary of what I found:
 
 • Your website currently appears on Page ${s.page} of Google search results
 ${s.audit.kwVolume?`• Your target keyword gets ${s.audit.kwVolume.toLocaleString()} monthly searches — being on page ${s.page} means missing ~${s.audit.lostVisits.toLocaleString()} potential visits every month\n`:''}• Mobile Speed: ${s.audit.mob}/100 ${s.audit.mob<70?'(needs urgent improvement)':''}
-${!s.audit.hasDesc?'• Meta Description is missing — this directly affects your click-through rate from Google\n':''}${!s.audit.hasH1?'• H1 Tag is missing — a critical on-page SEO element\n':''}• Domain has ${s.audit.bl.toLocaleString()} backlinks from ${s.audit.rd.toLocaleString()} referring domains
+${!s.audit.hasTitle?'• Meta Title is missing — a critical on-page SEO element\n':''}${!s.audit.hasDesc?'• Meta Description is missing — this directly affects your click-through rate from Google\n':''}• Domain has ${s.audit.bl.toLocaleString()} backlinks from ${s.audit.rd.toLocaleString()} referring domains
 
 I have prepared a detailed FREE SEO audit report for your website (attached). It includes all issues found and a clear action plan to help you reach Page 1 of Google within 3-4 months.
 
