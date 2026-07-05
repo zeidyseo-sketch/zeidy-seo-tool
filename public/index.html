@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Zeidy SEO — Lead Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{--primary:#0D1B2A;--secondary:#1B4F72;--accent:#00C897;--neutral:#8D99AE;--bg:#F0F4F8;--white:#fff;--error:#e74c3c;--border:#dde3ea;}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -760,93 +762,179 @@ function exportCSV(){
   notif('✅ تم تصدير CSV','success');
 }
 
-async function genPDF(i){
+function genPDF(i){
   const s=sites[i];
   if(!s.audit){notif('افحص الموقع أولاً','error');return;}
+  const d=s.audit;
   notif('⏳ جاري إنشاء التقرير...','success');
-  try{
-    const res=await fetch(API+'/api/pdf',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        domain:s.domain,page:s.page,score:s.audit.score,
-        mob:s.audit.mob,desk:s.audit.desk,ssl:s.audit.ssl,cwv:s.audit.cwv,
-        hasTitle:s.audit.hasTitle,hasDesc:s.audit.hasDesc,
-        hasSitemap:s.audit.hasSitemap,hasRobots:s.audit.hasRobots,
-        bl:s.audit.bl,rd:s.audit.rd,dr:s.audit.dr,maps:s.audit.maps,
-        issues:s.audit.issues,
-        kwVolume:s.audit.kwVolume||0,lostVisits:s.audit.lostVisits||0,
-        orgKw:s.audit.orgKw||0,orgTraffic:s.audit.orgTraffic||0,
-        competitors:s.audit.competitors||[]
-      })
+
+  const dateStr=new Date().toLocaleDateString('ar-EG',{year:'numeric',month:'long',day:'numeric'});
+  const scoreColor=d.score>=70?'#1a8a6e':d.score>=45?'#d68910':'#c0392b';
+  const yn=(v)=>v?'<span style="color:#1a8a6e;font-weight:700">✓ موجود</span>':'<span style="color:#c0392b;font-weight:700">✗ مفقود</span>';
+  const spd=(v)=>{const c=v>=75?'#1a8a6e':v>=50?'#d68910':'#c0392b';return `<span style="color:${c};font-weight:700">${v}/100</span>`;};
+
+  const compRows=(d.competitors&&d.competitors.length)?d.competitors.map(c=>
+    `<tr><td style="padding:8px 12px;border-bottom:1px solid #e5e9ef;direction:ltr;text-align:right">${c.domain}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e9ef;text-align:center">${c.kw.toLocaleString()}</td><td style="padding:8px 12px;border-bottom:1px solid #e5e9ef;text-align:center">${c.traffic.toLocaleString()}</td></tr>`
+  ).join(''):'';
+
+  const issuesRows=d.issues.map(x=>{
+    const dot=x.l==='red'?'#c0392b':x.l==='orange'?'#d68910':'#1a8a6e';
+    return `<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;font-size:13px"><span style="width:8px;height:8px;border-radius:50%;background:${dot};margin-top:6px;flex-shrink:0;display:inline-block"></span><span>${x.t}</span></div>`;
+  }).join('');
+
+  const html=`<div id="pdfReport" style="width:794px;background:#fff;font-family:'Tajawal',sans-serif;color:#0D1B2A;direction:rtl;padding:0;position:absolute;left:-9999px;top:0">
+    <!-- Header -->
+    <div style="background:#0D1B2A;padding:32px 40px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:48px;height:48px;background:#00C897;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;color:#0D1B2A">Z</div>
+        <div>
+          <div style="color:#fff;font-weight:900;font-size:22px">Zeidy SEO</div>
+          <div style="color:#00C897;font-size:12px;letter-spacing:2px">DATA AUTHORITY · سلطة البيانات</div>
+        </div>
+      </div>
+      <div style="text-align:left;color:#8D99AE;font-size:12px">${dateStr}</div>
+    </div>
+
+    <!-- Title -->
+    <div style="padding:28px 40px 16px">
+      <div style="font-size:13px;color:#8D99AE;margin-bottom:6px">تقرير تحليل SEO</div>
+      <div style="font-size:26px;font-weight:900;color:#1B4F72;direction:ltr;text-align:right">${d.domain}</div>
+    </div>
+
+    <!-- Score + Visibility cards -->
+    <div style="padding:0 40px 20px;display:flex;gap:16px">
+      <div style="flex:0 0 150px;background:#F0F4F8;border-radius:14px;padding:20px;text-align:center">
+        <div style="font-size:44px;font-weight:900;color:${scoreColor}">${d.score}%</div>
+        <div style="font-size:12px;color:#8D99AE;font-weight:700">التقييم العام</div>
+      </div>
+      <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="background:#fff;border:1px solid #dde3ea;border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:#1B4F72">${(d.kwVolume||0).toLocaleString()}</div>
+          <div style="font-size:11px;color:#8D99AE">حجم البحث الشهري للكلمة</div>
+        </div>
+        <div style="background:#fff;border:1px solid #f5c6cb;border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:#c0392b">~${(d.lostVisits||0).toLocaleString()}</div>
+          <div style="font-size:11px;color:#8D99AE">زيارة ضائعة/شهر (الصفحة ${d.page})</div>
+        </div>
+        <div style="background:#fff;border:1px solid #dde3ea;border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:#0D1B2A">${(d.orgKw||0).toLocaleString()}</div>
+          <div style="font-size:11px;color:#8D99AE">كلمة يترتب عليها الموقع</div>
+        </div>
+        <div style="background:#fff;border:1px solid #dde3ea;border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:#00C897">${(d.orgTraffic||0).toLocaleString()}</div>
+          <div style="font-size:11px;color:#8D99AE">زيارة عضوية مقدرة/شهر</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metrics sections -->
+    <div style="padding:0 40px 20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+      <div style="background:#F0F4F8;border-radius:12px;padding:16px">
+        <div style="font-size:12px;font-weight:900;color:#8D99AE;letter-spacing:1px;margin-bottom:12px">⚡ الأداء</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span style="color:#8D99AE">موبايل</span>${spd(d.mob)}</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span style="color:#8D99AE">ديسكتوب</span>${spd(d.desk)}</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span style="color:#8D99AE">HTTPS</span>${yn(d.ssl)}</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:#8D99AE">Core Web Vitals</span><span style="font-weight:700;color:${d.cwv==='جيد'?'#1a8a6e':d.cwv==='يحتاج تحسين'?'#d68910':'#c0392b'}">${d.cwv}</span></div>
+      </div>
+      <div style="background:#F0F4F8;border-radius:12px;padding:16px">
+        <div style="font-size:12px;font-weight:900;color:#8D99AE;letter-spacing:1px;margin-bottom:12px">📄 On-Page SEO</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span style="color:#8D99AE">Meta Title</span>${yn(d.hasTitle)}</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span style="color:#8D99AE">Meta Description</span>${yn(d.hasDesc)}</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span style="color:#8D99AE">Sitemap</span>${yn(d.hasSitemap)}</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:#8D99AE">Robots.txt</span>${yn(d.hasRobots)}</div>
+      </div>
+      <div style="background:#F0F4F8;border-radius:12px;padding:16px">
+        <div style="font-size:12px;font-weight:900;color:#8D99AE;letter-spacing:1px;margin-bottom:12px">🔗 الباك لينكس</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span style="color:#8D99AE">الباك لينكس</span><span style="font-weight:700">${(d.bl||0).toLocaleString()}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span style="color:#8D99AE">Referring Domains</span><span style="font-weight:700">${(d.rd||0).toLocaleString()}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span style="color:#8D99AE">Domain Rank</span><span style="font-weight:700">${d.dr}/100</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:#8D99AE">Google Maps</span><span style="font-weight:700;color:${d.maps?'#1a8a6e':'#d68910'}">${d.maps?'✓ مسجّل':'✗ غير مسجّل'}</span></div>
+      </div>
+    </div>
+
+    ${compRows?`<!-- Competitors -->
+    <div style="padding:0 40px 20px">
+      <div style="font-size:14px;font-weight:900;color:#1B4F72;margin-bottom:10px">🥊 مقارنة مع المنافسين</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr style="background:#0D1B2A;color:#fff"><th style="padding:8px 12px;text-align:right">الدومين</th><th style="padding:8px 12px;text-align:center">عدد الكلمات</th><th style="padding:8px 12px;text-align:center">الزيارات المقدرة</th></tr>
+        <tr style="background:#e8faf5"><td style="padding:8px 12px;font-weight:700;border-bottom:1px solid #e5e9ef">هذا الموقع</td><td style="padding:8px 12px;text-align:center;border-bottom:1px solid #e5e9ef">${(d.orgKw||0).toLocaleString()}</td><td style="padding:8px 12px;text-align:center;border-bottom:1px solid #e5e9ef">${(d.orgTraffic||0).toLocaleString()}</td></tr>
+        ${compRows}
+      </table>
+    </div>`:''}
+
+    <!-- Issues -->
+    <div style="padding:0 40px 20px">
+      <div style="font-size:14px;font-weight:900;color:#1B4F72;margin-bottom:10px">⚠️ أبرز المشاكل</div>
+      ${issuesRows}
+    </div>
+
+    <!-- Action plan -->
+    <div style="padding:0 40px 24px">
+      <div style="font-size:14px;font-weight:900;color:#1B4F72;margin-bottom:10px">🎯 خطة العمل المقترحة</div>
+      <div style="background:linear-gradient(135deg,#f0f9ff,#e8faf5);border-radius:12px;padding:18px;font-size:13px;line-height:1.9">
+        بمعالجة النقاط أعلاه عبر تحسين تقني ومحتوى مدروس، يمكن رفع ترتيب الموقع تدريجياً نحو الصفحة الأولى خلال <strong>3 إلى 4 أشهر</strong>. تشمل الخطة: تسريع الموقع، ضبط عناصر On-Page، بناء روابط عالية الجودة، وتحسين الظهور على الكلمات المستهدفة.
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background:#0D1B2A;padding:24px 40px;display:flex;align-items:center;justify-content:space-between">
+      <div style="color:#fff">
+        <div style="font-weight:900;font-size:16px">طه الزايدي</div>
+        <div style="color:#8D99AE;font-size:12px">Zeidy SEO — متخصص تحسين محركات البحث</div>
+      </div>
+      <div style="text-align:left;color:#00C897;font-size:12px;line-height:1.8">
+        <div>📱 +216 98 239 317</div>
+        <div>📧 zeidyseo@gmail.com</div>
+      </div>
+    </div>
+  </div>`;
+
+  const wrap=document.createElement('div');
+  wrap.innerHTML=html;
+  document.body.appendChild(wrap);
+  const el=wrap.querySelector('#pdfReport');
+
+  const done=()=>{
+    html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#ffffff'}).then(canvas=>{
+      const img=canvas.toDataURL('image/jpeg',0.95);
+      const {jsPDF}=window.jspdf;
+      const pdf=new jsPDF('p','mm','a4');
+      const pw=210,ph=297;
+      const imgW=pw,imgH=canvas.height*pw/canvas.width;
+      let heightLeft=imgH,pos=0;
+      pdf.addImage(img,'JPEG',0,pos,imgW,imgH);
+      heightLeft-=ph;
+      while(heightLeft>0){
+        pos=heightLeft-imgH;
+        pdf.addPage();
+        pdf.addImage(img,'JPEG',0,pos,imgW,imgH);
+        heightLeft-=ph;
+      }
+      pdf.save(`zeidy-seo-${d.domain}.pdf`);
+      document.body.removeChild(wrap);
+      notif('✅ تم تحميل التقرير','success');
+      // Prepare outreach messages + CRM
+      prepareOutreach(s);
+    }).catch(err=>{
+      document.body.removeChild(wrap);
+      notif('خطأ في إنشاء PDF: '+err.message,'error');
     });
-    if(!res.ok){notif('خطأ في إنشاء PDF','error');return;}
+  };
 
-    // Download PDF
-    const blob=await res.blob();
-    const pdfUrl=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=pdfUrl;
-    a.download=`zeidy-seo-${s.domain}.pdf`;
-    a.click();
-    URL.revokeObjectURL(pdfUrl);
+  // Ensure Tajawal font is ready before rendering
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(done);}else{setTimeout(done,300);}
+}
 
-    // Build Email (first contact)
-    const emailBody=`Dear ${s.domain} Team,
-
-I hope this message finds you well.
-
-My name is Taha Zeidy, an SEO specialist at Zeidy SEO. I recently reviewed your website and noticed several opportunities that could significantly improve your Google rankings.
-
-Here is a quick summary of what I found:
-
-• Your website currently appears on Page ${s.page} of Google search results
-${s.audit.kwVolume?`• Your target keyword gets ${s.audit.kwVolume.toLocaleString()} monthly searches — being on page ${s.page} means missing ~${s.audit.lostVisits.toLocaleString()} potential visits every month\n`:''}• Mobile Speed: ${s.audit.mob}/100 ${s.audit.mob<70?'(needs urgent improvement)':''}
-${!s.audit.hasTitle?'• Meta Title is missing — a critical on-page SEO element\n':''}${!s.audit.hasDesc?'• Meta Description is missing — this directly affects your click-through rate from Google\n':''}• Domain has ${s.audit.bl.toLocaleString()} backlinks from ${s.audit.rd.toLocaleString()} referring domains
-
-I have prepared a detailed FREE SEO audit report for your website (attached). It includes all issues found and a clear action plan to help you reach Page 1 of Google within 3-4 months.
-
-I would love to discuss how we can help you grow your online visibility.
-
-Best regards,
-Taha Zeidy
-Zeidy SEO — Data Authority
-📧 zeidyseo@gmail.com
-📱 +216 98 239 317
-🔗 wa.me/message/LJYDD45XHP2BL1`;
-
-    // Build WhatsApp (follow-up after 3 days)
-    const waBody=`السلام عليكم 👋
-
-أنا Taha من Zeidy SEO.
-
-أرسلت لكم قبل 3 أيام تقرير SEO مجاني عن موقعكم *${s.domain}* على الإيميل.
-
-هل وصلكم؟ 📧
-
-التقرير يوضح لماذا موقعكم في الصفحة ${s.page} من Google وكيف نوصله للصفحة الأولى خلال 3-4 أشهر.
-
-Taha Zeidy | Zeidy SEO
-+216 98 239 317`;
-
-    // Fill outreach modal (email + WhatsApp follow-up)
-    document.getElementById('oTo').value=s.email||'';
-    document.getElementById('oSub').value=`Free SEO Audit Report — ${s.domain}`;
-    document.getElementById('oBody').value=emailBody;
-    document.getElementById('oPhone').value=s.phone||'';
-    document.getElementById('oWaBody').value=waBody;
-    document.getElementById('outTab1').style.display='block';
-    document.getElementById('outTab2').style.display='none';
-
-    notif('✅ التقرير جاهز — إيميل وواتساب محضّرين','success');
-
-    // Auto add to CRM
-    addToCRM(s);
-
-    // Show outreach modal
-    setTimeout(()=>document.getElementById('outreachModal').classList.add('open'),800);
-
-  }catch(e){notif('خطأ: '+e.message,'error');}
+function prepareOutreach(s){
+  document.getElementById('oTo').value=s.email||'';
+  document.getElementById('oSub').value=`تحليل SEO مجاني لموقعكم — ${s.domain}`;
+  document.getElementById('oBody').value=buildEmailBody(s);
+  document.getElementById('oPhone').value=s.phone||'';
+  document.getElementById('oWaBody').value=buildWaBody(s);
+  document.getElementById('outTab1').style.display='block';
+  document.getElementById('outTab2').style.display='none';
+  addToCRM(s);
+  setTimeout(()=>document.getElementById('outreachModal').classList.add('open'),600);
 }
 function cp(id){navigator.clipboard.writeText(document.getElementById(id).value);notif('✅ تم النسخ','success');}
 function cm(id){document.getElementById(id).classList.remove('open');}
