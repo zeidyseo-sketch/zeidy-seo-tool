@@ -459,7 +459,7 @@ function visHTML(d){
       <div style="font-size:11px;color:var(--neutral)">بحث شهري على الكلمة</div></div>`;
   if(d.lostVisits)html+=`<div style="text-align:center;background:#fff;border:1px solid #f5c6cb;border-radius:10px;padding:12px">
       <div style="font-size:22px;font-weight:900;color:#c0392b">~${d.lostVisits.toLocaleString()}</div>
-      <div style="font-size:11px;color:var(--neutral)">زيارة ضائعة/شهر (مقارنة بالمراكز الأولى)</div></div>`;
+      <div style="font-size:11px;color:var(--neutral)">زيارة ضائعة/شهر (بسبب موقعه في الصفحة ${d.page||''})</div></div>`;
   if(d.orgKw)html+=`<div style="text-align:center;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px">
       <div style="font-size:22px;font-weight:900;color:var(--primary)">${d.orgKw.toLocaleString()}</div>
       <div style="font-size:11px;color:var(--neutral)">كلمة يترتب عليها الموقع</div></div>`;
@@ -598,15 +598,16 @@ async function runAudit(i){
       }));
     }catch(e){console.log('Labs fallback');}
 
-    // Spam score from backlinks summary (already fetched above in blResult scope — refetch value)
-    // Estimated monthly opportunity loss: page 2-3 gets ~1% CTR vs ~25% in top-3
-    const lostVisits=kwVolume>0?Math.round(kwVolume*0.24):0;
+    // Estimated monthly opportunity loss based on page position
+    // (page 2 ≈ 25% of keyword clicks lost, page 3 ≈ 32%)
+    const lossRate=s.page>=3?0.32:0.25;
+    const lostVisits=kwVolume>0?Math.round(kwVolume*lossRate):0;
 
     const score=Math.min(Math.round((mob+desk)/2*0.5+(ssl?10:0)+(hasTitle?7:0)+(hasDesc?8:0)+(rd>50?10:rd>10?5:0)),95);
     const issues=buildIssues(mob,desk,ssl,hasTitle,hasDesc,hasSitemap,hasRobots,s.page);
     const ai=buildAI(s,mob,desk,ssl,issues);
 
-    s.audit={score,mob,desk,ssl,cwv,hasTitle,hasDesc,hasSitemap,hasRobots,bl,rd,dr,maps,issues,ai,orgKw,orgTraffic,etv,competitors,kwVolume,lostVisits};
+    s.audit={score,mob,desk,ssl,cwv,hasTitle,hasDesc,hasSitemap,hasRobots,bl,rd,dr,maps,issues,ai,orgKw,orgTraffic,etv,competitors,kwVolume,lostVisits,page:s.page};
 
     ss('tAudits',gs('tAudits')+1);
     ss('mTotal',gs('mTotal')+1);
@@ -640,17 +641,65 @@ function buildAI(s,mob,desk,ssl,issues){
   const problems=issues.filter(x=>x.l==='red').slice(0,2).map(x=>x.t.split('—')[0].trim());
   const d=s.audit;
   let loss='';
-  if(kwVolume>0)loss=` الكلمة المستهدفة عليها ${kwVolume.toLocaleString()} بحث شهرياً، وموقعه في الصفحة ${s.page} يعني أنه يفوّت ~${Math.round(kwVolume*0.24).toLocaleString()} زيارة كل شهر.`;
+  if(kwVolume>0){
+    const rate=s.page>=3?0.32:0.25;
+    loss=` الكلمة المستهدفة عليها ${kwVolume.toLocaleString()} بحث شهرياً، وموقعه في الصفحة ${s.page} يعني أنه يفوّت ~${Math.round(kwVolume*rate).toLocaleString()} زيارة كل شهر.`;
+  }
   return `<strong>${s.title}</strong> يظهر في الصفحة ${s.page} رغم وجوده في السوق — يخسر يومياً معظم عملائه المحتملين.${loss} أبرز المشاكل: ${problems.join('، ')}. مع تحسين SEO مركّز يمكنه الوصول للصفحة الأولى خلال 3-4 أشهر.`;
 }
 
 function toggle(i){document.getElementById('ab-body-'+i).classList.toggle('open');document.getElementById('ar-'+i).classList.toggle('open');}
 
+function buildEmailBody(s){
+  const d=s.audit||{};
+  let lines=[];
+  lines.push(`الموقع يظهر في الصفحة ${s.page} من نتائج Google — أي أن أغلب العملاء لا يصلون إليه.`);
+  if(d.kwVolume)lines.push(`الكلمة المستهدفة عليها ${d.kwVolume.toLocaleString()} عملية بحث شهرياً، وبقاؤه في الصفحة ${s.page} يعني تفويت ما يقارب ${(d.lostVisits||0).toLocaleString()} زائر كل شهر.`);
+  if(d.mob&&d.mob<70)lines.push(`سرعة الموقع على الجوال ضعيفة (${d.mob}/100)، وهذا يُنفّر الزوار ويؤثر على الترتيب.`);
+  if(d&&!d.hasDesc)lines.push(`وصف الميتا (Meta Description) غير موجود، ما يقلّل من نسبة النقر في نتائج البحث.`);
+  if(d&&!d.hasTitle)lines.push(`عنوان الميتا (Meta Title) غير موجود، وهو عنصر أساسي في تحسين الظهور.`);
+  const body=`السلام عليكم ورحمة الله،
+
+أنا طه الزايدي، متخصص في تحسين محركات البحث (SEO) للمواقع العربية والخليجية.
+
+راجعت موقعكم (${s.domain}) ولاحظت ما يلي:
+
+${lines.map(l=>'• '+l).join('\n')}
+
+يمكنني مساعدتكم على معالجة هذه النقاط والوصول إلى الصفحة الأولى خلال 3 إلى 4 أشهر بعمل منظّم ومدروس.
+
+هل تودّون تحديد موعد لمكالمة قصيرة لمناقشة التفاصيل؟
+
+مع خالص التقدير،
+طه الزايدي | Zeidy SEO
+الهاتف/واتساب: +216 98 239 317
+البريد الإلكتروني: zeidyseo@gmail.com`;
+  return body;
+}
+
+function buildWaBody(s){
+  const d=s.audit||{};
+  let hook='';
+  if(d.kwVolume)hook=`\n\nالكلمة التي تستهدفونها عليها ${d.kwVolume.toLocaleString()} بحث شهرياً، وبقاؤكم في الصفحة ${s.page} يفوّت عليكم قرابة ${(d.lostVisits||0).toLocaleString()} زائر كل شهر.`;
+  return `السلام عليكم ورحمة الله،
+
+أنا طه الزايدي من Zeidy SEO، متخصص في تحسين محركات البحث.
+
+راجعت موقعكم (${s.domain}) ولاحظت أنه يظهر في الصفحة ${s.page} من Google.${hook}
+
+يمكنني مساعدتكم على الوصول إلى الصفحة الأولى بعمل منظّم خلال 3 إلى 4 أشهر.
+
+هل نحدّد مكالمة قصيرة لمناقشة التفاصيل؟
+
+طه الزايدي | Zeidy SEO
++216 98 239 317`;
+}
+
 function openEmail(i){
-  const s=sites[i];const d=s.audit;
+  const s=sites[i];
   document.getElementById('eTo').value=s.email;
-  document.getElementById('eSub').value=`تحليل SEO مجاني — ${s.domain}`;
-  document.getElementById('eBody').value=`السلام عليكم،\n\nأنا Taha من Zeidy SEO، متخصص في تحسين محركات البحث للمواقع العربية.\n\nقمت بمراجعة موقعكم ${s.domain} ووجدت:\n\n${d&&d.mob<70?`• سرعة الموبايل: ${d.mob}/100 (تحتاج تحسيناً عاجلاً)\n`:''}${d&&!d.hasDesc?'• Meta Description مفقود — يؤثر على ظهوركم في Google\n':''}• الموقع يظهر في الصفحة ${s.page} — معظم عملائكم لا يجدونكم\n\nعندي تقرير مفصل مجاني. هل أرسله لكم؟\n\nتحياتي،\nTaha Zeidy | Zeidy SEO\n📱 +216 98 239 317\n✉️ zeidyseo@gmail.com`;
+  document.getElementById('eSub').value=`تحليل SEO مجاني لموقعكم — ${s.domain}`;
+  document.getElementById('eBody').value=buildEmailBody(s);
   document.getElementById('emailModal').classList.add('open');
 }
 
@@ -660,7 +709,7 @@ function sendEmail(){
   window.open(`mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`,'_blank');
   ss('tEmails',gs('tEmails')+1);updateUI();
   cm('emailModal');
-  notif('✅ تم فتح الإيميل — لا تنسى ترفق PDF','success');
+  notif('✅ تم فتح الإيميل — جاهز للإرسال','success');
 }
 
 function sendOutreachEmail(){
@@ -685,7 +734,7 @@ function openOutreachWA(){
 function openWa(i){
   const s=sites[i];
   document.getElementById('waPhone').value=s.phone;
-  document.getElementById('waBody').value=`السلام عليكم 👋\n\nأنا Taha من Zeidy SEO.\n\nراجعت موقعكم *${s.domain}* — يظهر في الصفحة ${s.page} من Google، يعني تخسرون عملاء كل يوم.\n\nعندي تقرير مجاني. هل تحبون أبعثه لكم؟ 📊`;
+  document.getElementById('waBody').value=buildWaBody(s);
   document.getElementById('waModal').classList.add('open');
   ss('tWa',gs('tWa')+1);updateUI();
 }
