@@ -61,8 +61,9 @@ app.post('/api/competitors', (req, res) =>
 app.get('/api/pagespeed', async (req, res) => {
   try {
     const { url, strategy } = req.query;
+    const key = process.env.PAGESPEED_KEY ? `&key=${process.env.PAGESPEED_KEY}` : '';
     const response = await fetch(
-      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}`
+      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}${key}`
     );
     res.json(await response.json());
   } catch (err) {
@@ -111,17 +112,6 @@ print(wa_msg)
     console.error('PDF error:', err.message);
     res.status(500).json({ error: err.message });
   }
-});
-
-// ===== TEMPORARY DEBUG — remove after fixing credentials =====
-app.get('/api/debug', (req, res) => {
-  res.json({
-    login: DFS_LOGIN,
-    passLength: DFS_PASS ? DFS_PASS.length : 0,
-    passFirst3: DFS_PASS ? DFS_PASS.slice(0, 3) : null,
-    passLast3: DFS_PASS ? DFS_PASS.slice(-3) : null,
-    hasSpaces: DFS_PASS ? (DFS_PASS !== DFS_PASS.trim()) : null
-  });
 });
 
 const PORT = process.env.PORT || 3000;
